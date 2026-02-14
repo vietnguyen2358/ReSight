@@ -66,11 +66,16 @@ export function GideonProvider({ children }: { children: React.ReactNode }) {
       try {
         const data = JSON.parse(event.data);
         if (data.agent && data.message) {
+          console.log(`[${data.agent}] ${data.message}`);
           addThought(data.agent, data.message);
         }
       } catch {
         // ignore parse errors
       }
+    };
+
+    eventSource.onerror = () => {
+      console.warn("[ThoughtStream] SSE connection error, will auto-reconnect");
     };
 
     return () => eventSource.close();

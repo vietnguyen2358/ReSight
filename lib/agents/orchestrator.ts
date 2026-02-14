@@ -6,18 +6,28 @@ import { navigatorAgent } from "./navigator";
 import { scribeAgent, getFullContext } from "./scribe";
 import { guardianAgent } from "./guardian";
 import { thoughtEmitter } from "@/lib/thought-stream/emitter";
+import { devLog } from "@/lib/dev-logger";
 import type { AgentResult } from "./types";
 
 function getModel() {
   const googleKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+
+  // Prefer OpenRouter for agent LLM calls (cheaper), fall back to Google
+  if (openrouterKey) {
+    const modelName = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
+    devLog.info("llm", `Orchestrator using OpenRouter: ${modelName}`);
+    const openrouter = createOpenAI({
+      apiKey: openrouterKey,
+      baseURL: "https://openrouter.ai/api/v1",
+    });
+    return openrouter.chat(modelName);
+  }
   if (googleKey) {
+    devLog.info("llm", "Orchestrator using Google Gemini: gemini-2.0-flash");
     return google("gemini-2.0-flash");
   }
-  const openrouter = createOpenAI({
-    apiKey: process.env.OPENROUTER_API_KEY,
-    baseURL: "https://openrouter.ai/api/v1",
-  });
-  return openrouter.chat(process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini");
+  throw new Error("No LLM API key configured. Set GOOGLE_GENERATIVE_AI_API_KEY or OPENROUTER_API_KEY.");
 }
 
 const ORCHESTRATOR_SYSTEM = `You are Gideon, the orchestrator for a voice-controlled web browser for visually impaired users.
@@ -38,15 +48,23 @@ function sendThought(agent: string, message: string) {
 }
 
 export async function runOrchestrator(instruction: string): Promise<AgentResult> {
+  devLog.info("orchestrator", `New instruction: "${instruction}"`);
   sendThought("Orchestrator", `Processing: "${instruction}"`);
 
   const userContext = getFullContext(sendThought);
+  devLog.debug("orchestrator", "User context loaded", { context: userContext });
+
+  const prompt = `User preferences: ${JSON.stringify(userContext)}\n\nUser says: "${instruction}"`;
+  const done = devLog.time("llm", "Orchestrator generateText call", {
+    system: ORCHESTRATOR_SYSTEM.substring(0, 200) + "...",
+    prompt,
+  });
 
   try {
-    const { text, toolResults } = await generateText({
+    const { text, toolResults, steps } = await generateText({
       model: getModel(),
       system: ORCHESTRATOR_SYSTEM,
-      prompt: `User preferences: ${JSON.stringify(userContext)}\n\nUser says: "${instruction}"`,
+      prompt,
       stopWhen: stepCountIs(4),
       tools: {
         navigate: tool({
@@ -58,7 +76,13 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
               .describe("The user's full browsing instruction"),
           }),
           execute: async ({ instruction }) => {
-            return await navigatorAgent(instruction, sendThought);
+            devLog.info("orchestrator", `Tool call: navigate("${instruction}")`);
+            const result = await navigatorAgent(instruction, sendThought);
+            devLog.info("orchestrator", `navigate returned`, {
+              success: result.success,
+              messagePreview: result.message?.substring(0, 200),
+            });
+            return result;
           },
         }),
         remember: tool({
@@ -73,6 +97,7 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
               .describe("Value to store (only for store action)"),
           }),
           execute: async ({ action, key, value }) => {
+            devLog.info("orchestrator", `Tool call: remember(${action}, ${key})`);
             return await scribeAgent(action, key, value, sendThought);
           },
         }),
@@ -86,15 +111,23 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
               .describe("Current page context/description"),
           }),
           execute: async ({ action, pageContext }) => {
+            devLog.info("orchestrator", `Tool call: safety_check("${action}")`);
             return await guardianAgent(action, pageContext, sendThought);
           },
         }),
       },
     });
 
+    done({
+      responseText: text?.substring(0, 300),
+      toolCallCount: toolResults?.length ?? 0,
+      stepCount: steps?.length ?? 0,
+    });
+
     // If the model didn't call any tools but the instruction looks like a browser task, force navigate
     const hasToolExecution = Array.isArray(toolResults) && toolResults.length > 0;
     if (!hasToolExecution) {
+      devLog.warn("orchestrator", "No tools called by LLM, forcing navigator fallback");
       sendThought("Orchestrator", "No tool called, routing to navigator directly.");
       return await navigatorAgent(instruction, sendThought);
     }
@@ -107,6 +140,10 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
         (r.output as Record<string, unknown>).confirmationRequired
     );
 
+    devLog.info("orchestrator", "Orchestrator complete", {
+      finalMessage: text?.substring(0, 200),
+      needsConfirmation,
+    });
     sendThought("Orchestrator", "Done");
 
     return {
@@ -116,6 +153,8 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
     };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
+    done({ error: errorMsg }, "error");
+    devLog.error("orchestrator", `Orchestrator failed: ${errorMsg}`);
     sendThought("Orchestrator", `Error: ${errorMsg}`);
     return {
       success: false,
