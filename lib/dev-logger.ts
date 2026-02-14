@@ -98,7 +98,16 @@ class DevLogger extends EventEmitter {
   }
 }
 
-const devLog = new DevLogger();
-devLog.setMaxListeners(50);
+// Store on globalThis to survive Next.js hot reloads in dev mode.
+// Without this, every file save resets the module-level instance,
+// wiping all log history and breaking the /dev page.
+const globalRef = globalThis as unknown as { __devLog?: DevLogger };
+
+if (!globalRef.__devLog) {
+  globalRef.__devLog = new DevLogger();
+  globalRef.__devLog.setMaxListeners(50);
+}
+
+const devLog = globalRef.__devLog;
 
 export { devLog };

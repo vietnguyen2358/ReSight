@@ -33,20 +33,21 @@ function getModel() {
   throw new Error("No LLM API key configured. Set GOOGLE_GENERATIVE_AI_API_KEY or OPENROUTER_API_KEY.");
 }
 
-const ORCHESTRATOR_SYSTEM = `You are Gideon, the orchestrator for a voice-controlled web browser for visually impaired users.
+const ORCHESTRATOR_SYSTEM = `You are Gideon, a friendly voice assistant that helps blind users browse the web. You're like a helpful friend sitting next to them, controlling their computer for them.
 
-You receive user instructions and route them to the right tool:
+You receive what the user says and decide what to do:
 
-1. **navigate** — For ANY web browsing task: searching, visiting sites, clicking, reading page content, finding products, getting information, etc. Pass the user's FULL instruction — the navigator will break it into steps.
-2. **remember** — Store or recall user preferences and personal information.
+1. **navigate** — For ANY web browsing task. Pass the user's FULL request — the navigator handles multi-step browsing internally.
+2. **remember** — Store or recall user preferences (e.g., "I like vanilla", "my address is...").
 3. **safety_check** — Use BEFORE purchases, downloads, or entering personal info.
 
-RULES:
-- For web tasks, call navigate ONCE with the complete user request. Do NOT break it into multiple navigate calls — the navigator handles multi-step navigation internally.
-- After navigate returns, relay its result to the user naturally.
-- Keep your response concise — 1-2 sentences describing what was found or done.
-- If the user mentions a preference (e.g., "I like vanilla", "my address is..."), call remember to store it.
-- If the task involves money, PII, or downloads, call safety_check FIRST, then navigate.`;
+HOW TO RESPOND:
+- Be conversational and natural — like talking to a friend, not a computer
+- After navigate returns, relay what was found in a natural, spoken way
+- Keep responses concise but warm: "Here's what I found..." not "Query executed successfully"
+- Your response will be SPOKEN ALOUD to the user, so write it like speech
+- For web tasks, call navigate ONCE with the complete request
+- If something involves money or personal info, call safety_check FIRST`;
 
 function sendThought(agent: string, message: string) {
   thoughtEmitter.sendThought(agent, message);
@@ -59,7 +60,7 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
   // 1. If there's a pending clarification question, route the input as the answer
   if (hasPendingQuestion()) {
     devLog.info("orchestrator", `Routing as clarification answer: "${instruction}"`);
-    sendThought("Orchestrator", `Passing your response to the navigator...`);
+    sendThought("Narrator", `Got it — passing your answer along...`);
     answerQuestion(instruction.trim());
     return { success: true, message: "Got it, continuing with your answer." };
   }
@@ -68,14 +69,14 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
   if (/^(stop|cancel|wait|never\s*mind|halt|pause)$/i.test(lower)) {
     devLog.info("orchestrator", `Stop command detected: "${instruction}"`);
     requestAbort();
-    sendThought("Orchestrator", "Stopping current task...");
+    sendThought("Narrator", "Okay, stopping what I was doing.");
     return { success: true, message: "Okay, I've stopped." };
   }
 
   // 3. Go back command — navigate browser back
   if (/^(go\s*back|back|undo|previous(\s*page)?)$/i.test(lower)) {
     devLog.info("orchestrator", `Go back command detected`);
-    sendThought("Orchestrator", "Going back to the previous page...");
+    sendThought("Narrator", "Going back to the previous page...");
     try {
       const stagehand = await getStagehand();
       const page = stagehand.context.activePage();
@@ -84,8 +85,8 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
         await page.waitForTimeout(1500);
         await captureScreenshot(page);
         const title = await page.title().catch(() => page.url());
-        sendThought("Narrator", `Went back. Now on: "${title}"`);
-        return { success: true, message: `Went back to: ${title}` };
+        sendThought("Narrator", `Alright, I went back. We're now on "${title}".`);
+        return { success: true, message: `Went back to ${title}.` };
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -96,19 +97,10 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
   // Normal request — clear any previous abort flag
   clearAbort();
 
-  sendThought("Orchestrator", `Processing: "${instruction}"`);
-
-  // Inter-agent: Orchestrator announces to council
-  sendThought("Orchestrator → Council", `New task received. Analyzing intent: "${instruction}"`);
+  sendThought("Narrator", `On it — let me help you with that.`);
 
   const userContext = getFullContext(sendThought);
   devLog.debug("orchestrator", "User context loaded", { context: userContext });
-
-  // Orchestrator reasoning visible in thought stream
-  const contextKeys = Object.keys(userContext).filter((k) => !k.startsWith("_"));
-  if (contextKeys.length > 0) {
-    sendThought("Orchestrator", `User context available: ${contextKeys.join(", ")}`);
-  }
 
   const prompt = `User preferences: ${JSON.stringify(userContext)}\n\nUser says: "${instruction}"`;
   const done = devLog.time("llm", "Orchestrator generateText call", {
@@ -133,7 +125,6 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
           }),
           execute: async ({ instruction: navInstruction }) => {
             devLog.info("orchestrator", `Tool call: navigate("${navInstruction}")`);
-            sendThought("Orchestrator → Navigator", `Dispatching web task: "${navInstruction}"`);
             const result = await navigatorAgent(navInstruction, sendThought);
             devLog.info("orchestrator", `navigate returned`, {
               success: result.success,
@@ -142,9 +133,7 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
 
             // Learn from successful navigations
             if (result.success && result.message) {
-              sendThought("Orchestrator → Scribe", `Task succeeded. Saving navigation pattern for future reference.`);
               try {
-                // Extract a simple pattern from the instruction
                 const pattern = navInstruction.substring(0, 100);
                 const steps = result.message.substring(0, 200);
                 saveLearnedFlow(pattern, steps);
@@ -153,7 +142,6 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
               }
             }
 
-            sendThought("Orchestrator", `Navigator returned: ${result.success ? "success" : "failed"}`);
             return result;
           },
         }),
@@ -170,7 +158,7 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
           }),
           execute: async ({ action, key, value }) => {
             devLog.info("orchestrator", `Tool call: remember(${action}, ${key})`);
-            sendThought("Orchestrator → Scribe", `${action === "store" ? "Store" : "Recall"} preference: "${key}"`);
+            sendThought("Narrator", action === "store" ? `I'll remember that for you.` : `Let me check what I know about "${key}"...`);
             return await scribeAgent(action, key, value, sendThought);
           },
         }),
@@ -185,9 +173,9 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
           }),
           execute: async ({ action, pageContext }) => {
             devLog.info("orchestrator", `Tool call: safety_check("${action}")`);
-            sendThought("Orchestrator → Guardian", `Safety review requested: "${action}"`);
+            sendThought("Narrator", `Let me make sure this is safe before proceeding...`);
             const result = await guardianAgent(action, pageContext, sendThought);
-            sendThought("Guardian → Orchestrator", `Verdict: ${result.success ? "approved" : "blocked"} — ${result.message}`);
+            sendThought("Narrator", result.success ? `Looks safe, going ahead.` : `Hold on — ${result.message}`);
             return result;
           },
         }),
@@ -204,8 +192,6 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
     const hasToolExecution = Array.isArray(toolResults) && toolResults.length > 0;
     if (!hasToolExecution) {
       devLog.warn("orchestrator", "No tools called by LLM, forcing navigator fallback");
-      sendThought("Orchestrator", "No tool called — routing to navigator directly");
-      sendThought("Orchestrator → Navigator", `Fallback dispatch: "${instruction}"`);
       return await navigatorAgent(instruction, sendThought);
     }
 
@@ -221,21 +207,19 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
       finalMessage: text?.substring(0, 200),
       needsConfirmation,
     });
-    sendThought("Orchestrator", "Done — preparing response");
-
     return {
       success: true,
-      message: text || "Action completed.",
+      message: text || "All done!",
       confirmationRequired: needsConfirmation || false,
     };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
     done({ error: errorMsg }, "error");
     devLog.error("orchestrator", `Orchestrator failed: ${errorMsg}`);
-    sendThought("Orchestrator", `Error: ${errorMsg}`);
+    sendThought("Narrator", `Sorry, I ran into a problem: ${errorMsg}`);
     return {
       success: false,
-      message: `Sorry, something went wrong: ${errorMsg}`,
+      message: `Sorry, something went wrong. ${errorMsg}`,
     };
   }
 }

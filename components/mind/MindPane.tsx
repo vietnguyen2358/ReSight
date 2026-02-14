@@ -135,12 +135,12 @@ export default function MindPane() {
 
       {/* ── Main Content: Unified Chat + Thoughts ── */}
       <div className="flex-1 overflow-hidden relative">
-        {hasElevenLabs ? (
-          <div className="flex flex-col h-full items-center justify-center gap-6 px-6">
+        <ChatPanel />
+        {/* Speak button overlay when voice is enabled */}
+        {hasElevenLabs && (
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10">
             <SpeakButton />
           </div>
-        ) : (
-          <ChatPanel />
         )}
       </div>
     </div>

@@ -31,8 +31,17 @@ class ThoughtEmitter extends EventEmitter {
   }
 }
 
-// Module-level singleton
-const thoughtEmitter = new ThoughtEmitter();
-thoughtEmitter.setMaxListeners(50);
+// Store on globalThis to survive Next.js hot reloads in dev mode.
+// Without this, every file save creates a new ThoughtEmitter instance,
+// breaking SSE subscriptions (the route listens on the old instance
+// while agents emit on the new one → zero thoughts reach the frontend).
+const globalRef = globalThis as unknown as { __thoughtEmitter?: ThoughtEmitter };
+
+if (!globalRef.__thoughtEmitter) {
+  globalRef.__thoughtEmitter = new ThoughtEmitter();
+  globalRef.__thoughtEmitter.setMaxListeners(50);
+}
+
+const thoughtEmitter = globalRef.__thoughtEmitter;
 
 export { thoughtEmitter };

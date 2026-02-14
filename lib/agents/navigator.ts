@@ -30,85 +30,71 @@ function getModel() {
   throw new Error("No LLM API key configured.");
 }
 
-const NAVIGATOR_SYSTEM = `You are the Navigator agent for Gideon, a voice-controlled web browser for BLIND users. You are the user's eyes — you MUST describe what you see after every significant page change.
+const NAVIGATOR_SYSTEM = `You are the Navigator for Gideon, a voice-controlled web browser for BLIND users. You are like a helpful friend sitting next to the user, browsing the web on their behalf. You MUST talk to them constantly — tell them what you're doing, what you see, and what you found.
+
+## Your Personality
+- You speak naturally, like a friend helping out: "Alright, let me head over to Target for you..." not "Executing navigation to target.com"
+- You're warm, clear, and efficient
+- You always tell the user what's happening: "I'm clicking the search box now...", "Okay, the results are loading...", "I can see a few options here..."
+- NEVER leave the user in silence. They can't see the screen — you're their eyes.
 
 ## Your Tools
 1. **goto_url** — Navigate to a URL
 2. **do_action** — Perform ONE simple action (click, type, scroll, press Enter, etc.)
 3. **extract_info** — Read/extract specific information from the current page
-4. **narrate** — Describe what the page looks like to the user (REQUIRED after every page load and significant action)
-5. **ask_user** — Ask the user a clarifying question when you're genuinely uncertain
-6. **done** — Signal task completion with a summary
+4. **narrate** — Describe what you see to the user (REQUIRED after every page load and significant action)
+5. **ask_user** — Ask the user a clarifying question when genuinely ambiguous
+6. **done** — Signal task completion with a conversational summary
 
-## NARRATION RULES (CRITICAL)
-You are the user's EYES. After every goto_url and after any do_action that changes the page significantly, you MUST call narrate to describe:
-- What type of page this is (search results, product page, article, form, homepage, etc.)
-- The spatial layout: what's at the top, middle, bottom
-- Key interactive elements: search bars, buttons, links, forms
-- The main content: product names/prices, article text, search results
-- Any obstacles: cookie popups, login walls, captchas, newsletter modals
-
-Narration style:
-- Use natural, spatial language: "At the top there's a search bar. Below that, I can see a grid of products..."
-- Be concise but informative — 2-4 sentences
-- Focus on what matters for the user's task
-- Mention prices, ratings, and key details when on shopping pages
+## NARRATION RULES (CRITICAL — YOU MUST FOLLOW THESE)
+After every goto_url and after any do_action that changes the page, you MUST call narrate. Describe:
+- What the page looks like spatially: "At the top there's a big search bar. Below that, I see a grid of products..."
+- What's relevant to the user's task: product names, prices, ratings, article content
+- Any problems: "There's a cookie popup in the way, let me dismiss that..."
+- Keep it natural and concise: 2-4 sentences, like you're describing it to a friend
 
 ## COMMON WEB PATTERNS (Handle Automatically)
-- **Cookie/consent popups**: Dismiss them immediately (click Accept/Agree/Close), then narrate the actual page
-- **Newsletter/signup modals**: Close them (click X or dismiss button), then continue
-- **Login walls**: Tell the user "This page requires login. Would you like me to try to sign in?" via ask_user
-- **Captchas**: Narrate that there's a captcha and explain you cannot solve it
-- **Age verification**: Ask the user before confirming age gates
+- **Cookie/consent popups**: Dismiss them immediately, then say "I dismissed a cookie popup, now I can see the actual page..."
+- **Newsletter/signup modals**: Close them, say "There was a signup popup, I closed it..."
+- **Login walls**: Ask the user via ask_user: "This page needs you to be logged in. Want me to try signing in?"
+- **Captchas**: Tell the user: "There's a captcha here that I can't solve, unfortunately."
 
 ## CLARIFICATION (ask_user)
-Use ask_user ONLY when genuinely ambiguous:
-- Multiple items match and you can't tell which the user wants
-- The page requires a choice (size, color, quantity)
-- Login is required and you need permission
-- Do NOT ask for confirmation on routine navigation steps
+Only when genuinely ambiguous:
+- Multiple items match: "I see three different protein powders — did you want the Optimum Nutrition one, the Dymatize, or the Garden of Life?"
+- Choice needed: "What size do you want?"
+- Don't ask about routine steps — just do them.
 
-## CRITICAL RULES
-- You MUST complete the ENTIRE task. Do NOT stop after just navigating to a website.
-- Break every task into simple, atomic steps. NEVER combine multiple actions in one do_action call.
-- ALWAYS start by navigating to the right website with goto_url.
-- After goto_url, you receive page context. Use this to decide next action, then NARRATE what you see.
-- For searching: goto_url, then do_action("click the search box"), do_action("type 'query'"), do_action("press Enter"), then NARRATE the results.
-- When you have the answer or task is done, call done with a natural summary.
-- If an action fails, try an alternative approach.
-- NEVER call done until you have actually completed the task.
-- If a tool result contains "LOOP DETECTED" or "ABORTED", call done immediately.
+## RULES
+- Complete the ENTIRE task. Going to a website is just the first step.
+- One action at a time. Never combine actions.
+- Start with goto_url, then narrate what you see, then continue.
+- If something fails, try a different approach and let the user know.
+- NEVER call done until the task is actually finished.
+- If you see "LOOP DETECTED" or "ABORTED", call done immediately.
+- Your done summary should be conversational — like telling a friend what you found.
 
 ## SITE-SPECIFIC PATTERNS
 
 YouTube — Creator videos:
-1. goto_url("https://www.youtube.com/@{username}/videos")
-2. narrate the video list
+1. goto_url("https://www.youtube.com/@{username}/videos") — go directly to their videos tab
+2. narrate what you see
 3. extract_info("List the most recent videos with titles and upload dates")
-4. done(summary)
+4. done with a conversational summary
 
 YouTube — Search:
 1. goto_url("https://www.youtube.com")
-2. do_action("click the search box"), type, press Enter
+2. Search via the search box
 3. narrate the search results
 
-Amazon — Shopping:
-1. goto_url("https://www.amazon.com")
+Amazon / Target / Walmart — Shopping:
+1. goto_url to the site
 2. Search via the search box
-3. narrate the product results with prices and ratings
-
-Amazon — Account:
-1. goto_url("https://www.amazon.com/gp/css/homepage.html")
-2. narrate what account options are visible
+3. narrate what products you see with prices and ratings
 
 Google — Search:
-1. goto_url("https://www.google.com/search?q={query}")
-2. narrate the search results
-
-Target/Walmart — Shopping:
-1. goto_url("https://www.{site}.com")
-2. Search via search input
-3. narrate the product results with prices`;
+1. goto_url("https://www.google.com/search?q={query}") — use URL params directly
+2. narrate the top results`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getPageContext(page: any) {
@@ -198,7 +184,7 @@ export async function navigatorAgent(
   sendThought: SendThoughtFn
 ): Promise<AgentResult> {
   devLog.info("navigator", `========== START: "${instruction}" ==========`);
-  sendThought("Navigator", `Task: "${instruction}"`);
+  sendThought("Narrator", `Alright, let me work on that for you...`);
 
   let stepNumber = 0;
   const actionHistory: Map<string, number> = new Map();
@@ -242,8 +228,7 @@ export async function navigatorAgent(
 
     const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${learnedContext}\n\nTask: ${instruction}`;
 
-    sendThought("Navigator", `Analyzing task and planning navigation steps...`);
-    sendThought("Navigator → Orchestrator", `Received task. Will navigate to complete: "${instruction}"`);
+    sendThought("Narrator", `Let me figure out the best way to do this...`);
 
     devLog.info("llm", "Navigator generateText call", {
       prompt: navigatorPrompt,
@@ -273,12 +258,14 @@ export async function navigatorAgent(
 
             const loopMsg = checkLoop("goto_url", fullUrl);
             if (loopMsg) {
-              sendThought("Navigator", "Loop detected — stopping repeated navigation");
+              sendThought("Narrator", "I seem to be going in circles. Let me stop and tell you what I've found so far.");
               return { error: loopMsg, currentUrl: page.url(), pageTitle: await page.title().catch(() => "") };
             }
 
             devLog.info("navigation", `[Step ${stepNumber}] goto_url: ${fullUrl}`);
-            sendThought("Navigator", `Step ${stepNumber}: Opening ${fullUrl}`);
+            // Extract a friendly site name from the URL
+            const siteName = new URL(fullUrl).hostname.replace("www.", "");
+            sendThought("Narrator", `Opening ${siteName}...`);
 
             // Track URL for go-back support
             setLastUrl(page.url());
@@ -290,14 +277,14 @@ export async function navigatorAgent(
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               navTimer({ success: false, error: msg }, "warn");
-              sendThought("Navigator", "Page load slow, continuing anyway");
+              sendThought("Narrator", "The page is loading a bit slowly, but I'll keep going...");
             }
 
             await page.waitForTimeout(2000);
             await captureScreenshot(page);
 
             const pageTitle = await page.title().catch(() => fullUrl);
-            sendThought("Navigator", `Page loaded: "${pageTitle}"`);
+            sendThought("Narrator", `The page has loaded — I'm on "${pageTitle}" now.`);
 
             const ctx = await getPageContext(page);
             devLog.info("navigator", `[Step ${stepNumber}] goto_url complete`, {
@@ -322,23 +309,32 @@ export async function navigatorAgent(
 
             const loopMsg = checkLoop("do_action", action);
             if (loopMsg) {
-              sendThought("Navigator", "Loop detected — stopping repeated action");
+              sendThought("Narrator", "I keep trying the same thing and it's not working. Let me tell you what I've found so far.");
               return { error: loopMsg, currentUrl: page.url(), pageTitle: await page.title().catch(() => "") };
             }
 
             devLog.info("navigator", `[Step ${stepNumber}] do_action: "${action}"`);
-            sendThought("Navigator", `Step ${stepNumber}: "${action}"`);
+            // Make action descriptions conversational
+            const friendlyAction = action.toLowerCase().startsWith("click")
+              ? `Clicking on ${action.replace(/^click\s+(the\s+|on\s+)?/i, "")}...`
+              : action.toLowerCase().startsWith("type")
+                ? `Typing ${action.replace(/^type\s+/i, "")}...`
+                : action.toLowerCase().startsWith("scroll")
+                  ? "Scrolling down the page..."
+                  : action.toLowerCase().startsWith("press")
+                    ? `Pressing ${action.replace(/^press\s+/i, "")}...`
+                    : `${action}...`;
+            sendThought("Narrator", friendlyAction);
 
             const actTimer = devLog.time("stagehand", `act("${action}")  [via navigator tool]`);
             try {
               await stagehand.act(action);
               actTimer({ success: true });
-              sendThought("Navigator", `Done: "${action}"`);
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               actTimer({ success: false, error: msg }, "error");
               devLog.error("navigator", `[Step ${stepNumber}] Action FAILED: "${action}"`, { error: msg });
-              sendThought("Navigator → Orchestrator", `Action failed: "${action}" — ${msg}. Trying alternative...`);
+              sendThought("Narrator", `That didn't quite work — let me try a different approach...`);
               await captureScreenshot(page);
               const errCtx = await getPageContext(page);
               return { ...errCtx, error: msg };
@@ -370,12 +366,12 @@ export async function navigatorAgent(
 
             const loopMsg = checkLoop("extract_info", extractInstruction);
             if (loopMsg) {
-              sendThought("Navigator", "Loop detected — stopping repeated extraction");
+              sendThought("Narrator", "I keep trying to read the same thing. Let me wrap up with what I have.");
               return { error: loopMsg };
             }
 
             devLog.info("navigator", `[Step ${stepNumber}] extract_info: "${extractInstruction}"`);
-            sendThought("Navigator", `Step ${stepNumber}: Reading page — "${extractInstruction}"`);
+            sendThought("Narrator", `Let me read through what's on the page...`);
 
             try {
               const extractTimer = devLog.time("stagehand", `extract("${extractInstruction}")`);
@@ -384,14 +380,13 @@ export async function navigatorAgent(
                 success: true,
                 resultPreview: JSON.stringify(result).substring(0, 500),
               });
-              sendThought("Navigator", "Extracted page info successfully");
-              sendThought("Navigator → Orchestrator", `Found data: ${JSON.stringify(result).substring(0, 200)}`);
+              sendThought("Narrator", "Got it — I've found the information you need.");
               await captureScreenshot(page);
               return result;
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               devLog.warn("navigator", `extract failed, falling back to innerText`, { error: msg });
-              sendThought("Navigator", "Extract failed, reading page text directly");
+              sendThought("Narrator", "Having a bit of trouble reading this page, let me try another way...");
               const fallbackText = await page
                 .evaluate(() => document.body.innerText.substring(0, 3000))
                 .catch(() => "Could not read page text");
@@ -447,8 +442,7 @@ export async function navigatorAgent(
           execute: async ({ summary }) => {
             stepNumber++;
             devLog.info("navigator", `[Step ${stepNumber}] done: "${summary.substring(0, 200)}"`);
-            sendThought("Navigator", "Task complete");
-            sendThought("Navigator → Orchestrator", `Finished in ${stepNumber} steps. Result: ${summary.substring(0, 150)}`);
+            sendThought("Narrator", summary);
             finalMessage = summary;
             await captureScreenshot(page);
             return { done: true };
@@ -471,8 +465,7 @@ export async function navigatorAgent(
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
     devLog.error("navigator", `Navigator failed: ${errorMsg}`);
-    sendThought("Navigator", `Error: ${errorMsg}`);
-    sendThought("Navigator → Orchestrator", `Navigation failed: ${errorMsg}`);
+    sendThought("Narrator", `I ran into a problem — ${errorMsg}. Let me try a different approach.`);
 
     // Try a simple direct navigation as last resort
     try {
@@ -481,7 +474,7 @@ export async function navigatorAgent(
       if (page) {
         const url = buildSearchUrl(instruction);
         devLog.warn("navigator", `Fallback: direct navigation to ${url}`);
-        sendThought("Navigator", `Fallback: loading ${url}`);
+        sendThought("Narrator", `Let me try searching for that directly...`);
         await page.goto(url, { waitUntil: "domcontentloaded", timeoutMs: 15000 });
         await captureScreenshot(page);
         return {
