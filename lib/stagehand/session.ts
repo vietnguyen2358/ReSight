@@ -9,6 +9,12 @@ const globalRef = globalThis as unknown as {
   __stagehandInit?: Promise<Stagehand>;
 };
 
+function envBool(name: string, defaultValue: boolean): boolean {
+  const raw = process.env[name];
+  if (raw == null) return defaultValue;
+  return ["1", "true", "yes", "on"].includes(raw.toLowerCase());
+}
+
 /**
  * Wraps a Stagehand instance with a Proxy that intercepts act/observe/extract
  * calls and logs inputs, outputs, errors, and timing to the dev logger.
@@ -112,9 +118,17 @@ export async function getStagehand(): Promise<Stagehand> {
       provider: "google",
       headless: true,
       browserbase: env === "BROWSERBASE",
+      solveCaptchas: envBool("BROWSERBASE_SOLVE_CAPTCHAS", true),
+      proxies: envBool("BROWSERBASE_PROXIES", true),
     });
 
     const done = devLog.time("stagehand", "Stagehand init");
+
+    const solveCaptchas = envBool("BROWSERBASE_SOLVE_CAPTCHAS", true);
+    const proxies = envBool("BROWSERBASE_PROXIES", true);
+    const blockAds = envBool("BROWSERBASE_BLOCK_ADS", true);
+    const captchaImageSelector = process.env.BROWSERBASE_CAPTCHA_IMAGE_SELECTOR;
+    const captchaInputSelector = process.env.BROWSERBASE_CAPTCHA_INPUT_SELECTOR;
 
     const raw = new Stagehand({
       env,
@@ -132,15 +146,32 @@ export async function getStagehand(): Promise<Stagehand> {
             projectId: process.env.BROWSERBASE_PROJECT_ID,
             browserbaseSessionCreateParams: {
               browserSettings: {
-                solveCaptchas: true,
+                solveCaptchas,
+                blockAds,
+                ...(captchaImageSelector ? { captchaImageSelector } : {}),
+                ...(captchaInputSelector ? { captchaInputSelector } : {}),
               },
-              proxies: true,
+              proxies,
             },
           }
         : {}),
     });
 
     await raw.init();
+
+    // Browserbase emits CAPTCHA lifecycle events via page console logs.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const page = (raw as any)?.context?.activePage?.();
+    if (page?.on) {
+      page.on("console", (msg: { text: () => string }) => {
+        const text = msg.text();
+        if (text === "browserbase-solving-started") {
+          devLog.info("stagehand", "CAPTCHA solving started");
+        } else if (text === "browserbase-solving-finished") {
+          devLog.info("stagehand", "CAPTCHA solving finished");
+        }
+      });
+    }
     done({ success: true });
 
     // Wrap with logging proxy

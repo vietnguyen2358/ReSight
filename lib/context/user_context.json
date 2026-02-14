@@ -64,6 +64,16 @@
       "pattern": "Find me 5 boba shops in sf on yelp.",
       "steps": "I found 5 great boba shops in San Francisco for you! Here they are:\n\n1. **Hi Sweetie Tea and Treats** - 4.7 stars, located at 775 Jackson St. Opens at 10 AM.\n\n2. **Feng Cha Teahouse - San Francisco** ",
       "timestamp": 1771070130666
+    },
+    {
+      "pattern": "can you find me the best boba in san jose?",
+      "steps": "I found the best boba spots in San Jose for you! The top-rated option is heytea on Hostetter Rd with 4.7 stars - people rave about their smooth matcha and flavorful brown sugar boba. Other great optio",
+      "timestamp": 1771093043835
+    },
+    {
+      "pattern": "find me the best boba in sf",
+      "steps": "I found the best boba spots in San Francisco for you! The top-rated place is Junbi Matcha & Tea on Market St with an impressive 4.9 stars - people love their perfectly steeped tea and perfectly chewy ",
+      "timestamp": 1771093250844
     }
   ]
 }
