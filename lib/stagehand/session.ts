@@ -1,8 +1,13 @@
 import { Stagehand } from "@browserbasehq/stagehand";
 import { devLog } from "@/lib/dev-logger";
 
-let instance: Stagehand | null = null;
-let initializing: Promise<Stagehand> | null = null;
+// Store on globalThis to survive Next.js hot reloads in dev mode.
+// Without this, every file save resets the module-level `instance` variable,
+// causing a brand new Chrome window to open.
+const globalRef = globalThis as unknown as {
+  __stagehand?: Stagehand;
+  __stagehandInit?: Promise<Stagehand>;
+};
 
 /**
  * Wraps a Stagehand instance with a Proxy that intercepts act/observe/extract
@@ -83,18 +88,16 @@ function withLogging(stagehand: Stagehand): Stagehand {
 }
 
 export async function getStagehand(): Promise<Stagehand> {
-  if (instance) return instance;
+  // Reuse existing instance (survives hot reloads via globalThis)
+  if (globalRef.__stagehand) return globalRef.__stagehand;
 
   // Deduplicate concurrent init calls
-  if (initializing) return initializing;
+  if (globalRef.__stagehandInit) return globalRef.__stagehandInit;
 
-  initializing = (async () => {
+  globalRef.__stagehandInit = (async () => {
     const env = (process.env.STAGEHAND_ENV as "LOCAL" | "BROWSERBASE") || "LOCAL";
     const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
-    // Stagehand MUST use Google Gemini — its observe/extract calls don't support
-    // custom baseURLs, so OpenRouter/other providers won't work here.
-    // OpenRouter is used only for AI SDK agent calls (orchestrator/navigator LLM).
     if (!googleApiKey) {
       devLog.error("stagehand", "Missing GOOGLE_GENERATIVE_AI_API_KEY — cannot init Stagehand");
       throw new Error(
@@ -107,6 +110,7 @@ export async function getStagehand(): Promise<Stagehand> {
       env,
       model: "gemini-2.0-flash",
       provider: "google",
+      headless: true,
       browserbase: env === "BROWSERBASE",
     });
 
@@ -118,6 +122,10 @@ export async function getStagehand(): Promise<Stagehand> {
         modelName: "gemini-2.0-flash",
         apiKey: googleApiKey,
       },
+      // Run headless — the user sees screenshots in the LiveFeed, not the raw browser
+      ...(env === "LOCAL"
+        ? { localBrowserLaunchOptions: { headless: true } }
+        : {}),
       ...(env === "BROWSERBASE"
         ? {
             apiKey: process.env.BROWSERBASE_API_KEY,
@@ -132,18 +140,18 @@ export async function getStagehand(): Promise<Stagehand> {
     // Wrap with logging proxy
     const stagehand = withLogging(raw);
 
-    instance = stagehand;
-    initializing = null;
+    globalRef.__stagehand = stagehand;
+    globalRef.__stagehandInit = undefined;
     return stagehand;
   })();
 
-  return initializing;
+  return globalRef.__stagehandInit;
 }
 
 export async function closeStagehand(): Promise<void> {
-  if (instance) {
+  if (globalRef.__stagehand) {
     devLog.info("stagehand", "Closing Stagehand session");
-    await instance.close();
-    instance = null;
+    await globalRef.__stagehand.close();
+    globalRef.__stagehand = undefined;
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 interface DevLogEntry {
   id: number;
@@ -43,21 +43,34 @@ export default function DevPage() {
   const [filter, setFilter] = useState<string>("all");
   const [autoScroll, setAutoScroll] = useState(true);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [connected, setConnected] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const lastIdRef = useRef(0);
+
+  // Poll for new logs every second
+  const poll = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/dev-logs?since=${lastIdRef.current}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const newLogs: DevLogEntry[] = await res.json();
+      if (newLogs.length > 0) {
+        lastIdRef.current = newLogs[newLogs.length - 1].id;
+        setLogs((prev) => [...prev, ...newLogs].slice(-500));
+        setConnected(true);
+      }
+    } catch {
+      setConnected(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const es = new EventSource("/api/dev-logs");
-    es.onmessage = (event) => {
-      try {
-        const entry = JSON.parse(event.data) as DevLogEntry;
-        setLogs((prev) => [...prev.slice(-499), entry]);
-      } catch {
-        // ignore
-      }
-    };
-    return () => es.close();
-  }, []);
+    // Initial fetch of all logs
+    poll();
+    const interval = setInterval(poll, 1000);
+    return () => clearInterval(interval);
+  }, [poll]);
 
   useEffect(() => {
     if (autoScroll && bottomRef.current) {
@@ -105,6 +118,16 @@ export default function DevPage() {
         <span style={{ color: "#ccff00", fontWeight: 700, fontSize: "14px" }}>
           GIDEON DEV
         </span>
+        <span
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: connected ? "#34d399" : "#f87171",
+            display: "inline-block",
+          }}
+          title={connected ? "Polling active" : "Disconnected"}
+        />
         <span style={{ color: "#525252" }}>|</span>
 
         {/* Category filters */}
@@ -151,7 +174,10 @@ export default function DevPage() {
         </button>
 
         <button
-          onClick={() => setLogs([])}
+          onClick={() => {
+            setLogs([]);
+            lastIdRef.current = 0;
+          }}
           style={{
             padding: "2px 8px",
             borderRadius: "4px",
@@ -168,7 +194,6 @@ export default function DevPage() {
 
       {/* Log entries */}
       <div
-        ref={containerRef}
         style={{
           flex: 1,
           overflowY: "auto",

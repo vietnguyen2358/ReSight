@@ -6,15 +6,28 @@ Gideon is an AI-powered voice browser that enables visually impaired users to na
 
 ## Architecture
 
-**The Mind (Left Pane)** — High-contrast voice UI with a 3D wireframe sphere, real-time agent thought stream, and push-to-speak controls.
+```
+User Input → Orchestrator (LLM router)
+               ├── Navigator (browser pilot) → Stagehand → Chromium
+               ├── Scribe (memory store) → user_context.json
+               └── Guardian (safety check) → approve/block
+
+Parallel streams:
+  Thoughts: Agent → SSE → ChatPanel (unified feed)
+  Screenshots: Browser → memory cache → LiveFeed UI
+```
+
+**The Mind (Left Pane)** — Unified chat interface with real-time agent thought stream, inter-agent communication logs, and text/voice input. GideonSphere serves as a compact status indicator.
 
 **The World (Right Pane)** — Live screenshot feed of the headless browser session with element overlay detection.
 
-**The Council** — Four specialized AI agents:
-- **Orchestrator** — Routes user intent to the right agent
-- **Navigator** — Controls the browser via Stagehand (act/observe/extract)
-- **Scribe** — Manages user preferences and memory
-- **Guardian** — Safety analysis and dark-pattern detection
+**The Council** — Four specialized AI agents working in two LLM layers:
+- **Orchestrator** — Routes user intent to the right agent (LLM with 3 tools)
+- **Navigator** — Plans & executes multi-step browser automation via Stagehand (LLM with 4 tools, up to 12 steps)
+- **Scribe** — Manages user preferences, memory, and learned navigation patterns (no LLM, file I/O)
+- **Guardian** — Safety analysis, dark-pattern detection, purchase confirmation (LLM, single call)
+
+**Stagehand** — Browser automation layer using its own internal Gemini-2.0-flash LLM to translate natural language actions ("click the search box") into precise DOM interactions via Playwright.
 
 ## Setup
 

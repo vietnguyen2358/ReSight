@@ -29,3 +29,6 @@ next-env.d.ts
 
 # browser screenshots
 public/feed/
+
+# internal notes
+qna.md

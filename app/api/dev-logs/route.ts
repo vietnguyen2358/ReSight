@@ -1,13 +1,26 @@
+import { NextRequest } from "next/server";
 import { devLog, type DevLogEntry } from "@/lib/dev-logger";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const sinceId = Number(searchParams.get("since") || "0");
+
+  // JSON polling mode: return logs since a given ID
+  if (searchParams.has("since")) {
+    const history = devLog.getHistory();
+    const newLogs = sinceId ? history.filter((e) => e.id > sinceId) : history;
+    return Response.json(newLogs, {
+      headers: { "Cache-Control": "no-cache" },
+    });
+  }
+
+  // SSE streaming mode (original)
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     start(controller) {
-      // Send full history first
       const history = devLog.getHistory();
       for (const entry of history) {
         controller.enqueue(
@@ -15,7 +28,6 @@ export async function GET() {
         );
       }
 
-      // Stream new logs
       const onLog = (entry: DevLogEntry) => {
         try {
           controller.enqueue(
