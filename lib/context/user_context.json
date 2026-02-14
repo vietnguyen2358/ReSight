@@ -1,26 +1,6 @@
 {
   "_learned_flows": [
     {
-      "pattern": "navigate me to the nearest bagel place",
-      "steps": "I've navigated you to the nearest bagel place! It's Izzy's Brooklyn Bagels, located at 477 California Ave in Palo Alto with a 4.5 star rating. It's a bagel cafe with NY roots that offers spreads and o",
-      "timestamp": 1771067903255
-    },
-    {
-      "pattern": "Search for apartments under $2000 in San Jose, find a recommended option, and get directions to that",
-      "steps": "I had to stop early (Step limit: used 11/10 steps). Here's what I found so far on the page.",
-      "timestamp": 1771068145598
-    },
-    {
-      "pattern": "Go to a rental site like Zillow or Apartments.com and search for apartments in San Jose under $2000,",
-      "steps": "I had to stop early (Step limit: used 11/10 steps). Here's what I found so far on the page.",
-      "timestamp": 1771068238986
-    },
-    {
-      "pattern": "can you look on yelp for the best sushi spot in sf?",
-      "steps": "I had to stop early (Step limit: used 10/10 steps). Here's what I found so far on the page.",
-      "timestamp": 1771068977779
-    },
-    {
       "pattern": "Find me the best 3 sushi restaurant in nyc",
       "steps": "I had to stop early (Cancelled by user). Here's what I found so far on the page.",
       "timestamp": 1771069953282
@@ -99,6 +79,26 @@
       "pattern": "find the best boba spot in sf and their thai tea price",
       "steps": "Great! I found the search results for By Me Boba Tea's Thai tea price. I can see their location at 22 Ross Alley in San Francisco with a 4.7 star rating. The Grubhub menu link shows Thai tea for $6.75",
       "timestamp": 1771099406034
+    },
+    {
+      "pattern": "find me the best boba spot in sf and their thai tea price",
+      "steps": "I found detailed information about By Me Boba Tea on Google. The page shows it's a 4.7-star rated bubble tea store at 22 Ross Alley in San Francisco. I can see mentions of their menu and pricing from ",
+      "timestamp": 1771101911889
+    },
+    {
+      "pattern": "Find the best boba spot in San Francisco and their Thai tea price. Look for a highly rated boba tea ",
+      "steps": "Great! I found detailed pricing information for QualiTea in San Francisco. The search results show QualiTea is located at 4023 18th St in San Francisco with 4.7-4.9 star ratings. The Thai Tea is price",
+      "timestamp": 1771102193842
+    },
+    {
+      "pattern": "Find me the best boba spot in San Francisco and their Thai tea price",
+      "steps": "I found the best boba spot in San Francisco for you! **QualiTea** at 4023 18th St is the top-rated Thai Tea Boba shop in San Francisco. It has great reviews and their **Thai Tea is priced at $6.75** (",
+      "timestamp": 1771102467581
+    },
+    {
+      "pattern": "Find me the best boba spot in Palo Alto and their prices",
+      "steps": "Perfect! I found the best boba spot in Palo Alto for you!\n\n**MOLLY TEA - PALO ALTO** ⭐ 4.8 stars (200+ reviews)\n📍 318 University Ave, Palo Alto, CA 94301\n🕐 Hours: 11:00 AM - 9:40 PM Daily\n🌐 Availab",
+      "timestamp": 1771103124605
     }
   ]
 }

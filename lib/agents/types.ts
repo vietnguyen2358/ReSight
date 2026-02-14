@@ -1,10 +1,13 @@
+export type ThoughtType = "thinking" | "answer";
+
 export interface ThoughtEvent {
   agent: string;
   message: string;
   timestamp: number;
+  type?: ThoughtType;
 }
 
-export type SendThoughtFn = (agent: string, message: string) => void;
+export type SendThoughtFn = (agent: string, message: string, type?: ThoughtType) => void;
 
 export interface AgentResult {
   success: boolean;

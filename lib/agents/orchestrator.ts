@@ -49,8 +49,8 @@ HOW TO RESPOND:
 - For web tasks, call navigate ONCE with the complete request
 - If something involves money or personal info, call safety_check FIRST`;
 
-function sendThought(agent: string, message: string) {
-  thoughtEmitter.sendThought(agent, message);
+function sendThought(agent: string, message: string, type?: "thinking" | "answer") {
+  thoughtEmitter.sendThought(agent, message, type);
 }
 
 export async function runOrchestrator(instruction: string): Promise<AgentResult> {
@@ -60,7 +60,7 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
   // 1. If there's a pending clarification question, route the input as the answer
   if (hasPendingQuestion()) {
     devLog.info("orchestrator", `Routing as clarification answer: "${instruction}"`);
-    sendThought("Narrator", `Got it — passing your answer along...`);
+    sendThought("Narrator", `Got it — passing your answer along...`, "thinking");
     answerQuestion(instruction.trim());
     return { success: true, message: "Got it, continuing with your answer." };
   }
@@ -69,14 +69,14 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
   if (/\b(stop|cancel|wait|never\s*mind|halt|pause)\b/i.test(lower)) {
     devLog.info("orchestrator", `Stop command detected: "${instruction}"`);
     requestAbort();
-    sendThought("Narrator", "Okay, stopping what I was doing.");
+    sendThought("Narrator", "Okay, stopping what I was doing.", "thinking");
     return { success: true, message: "Okay, I've stopped." };
   }
 
   // 3. Go back command — navigate browser back
   if (/\b(go\s*back|back|undo|previous(\s*page)?)\b/i.test(lower)) {
     devLog.info("orchestrator", `Go back command detected`);
-    sendThought("Narrator", "Going back to the previous page...");
+    sendThought("Narrator", "Going back to the previous page...", "thinking");
     try {
       const stagehand = await getStagehand();
       const page = stagehand.context.activePage();
@@ -85,7 +85,7 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
         await page.waitForTimeout(1500);
         await captureScreenshot(page);
         const title = await page.title().catch(() => page.url());
-        sendThought("Narrator", `Alright, I went back. We're now on "${title}".`);
+        sendThought("Narrator", `Alright, I went back. We're now on "${title}".`, "thinking");
         return { success: true, message: `Went back to ${title}.` };
       }
     } catch (err) {
@@ -156,7 +156,7 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
           }),
           execute: async ({ action, key, value }) => {
             devLog.info("orchestrator", `Tool call: remember(${action}, ${key})`);
-            sendThought("Narrator", action === "store" ? `I'll remember that for you.` : `Let me check what I know about "${key}"...`);
+            sendThought("Narrator", action === "store" ? `I'll remember that for you.` : `Let me check what I know about "${key}"...`, "thinking");
             return await scribeAgent(action, key, value, sendThought);
           },
         }),
@@ -171,9 +171,9 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
           }),
           execute: async ({ action, pageContext }) => {
             devLog.info("orchestrator", `Tool call: safety_check("${action}")`);
-            sendThought("Narrator", `Let me make sure this is safe before proceeding...`);
+            sendThought("Narrator", `Let me make sure this is safe before proceeding...`, "thinking");
             const result = await guardianAgent(action, pageContext, sendThought);
-            sendThought("Narrator", result.success ? `Looks safe, going ahead.` : `Hold on — ${result.message}`);
+            sendThought("Narrator", result.success ? `Looks safe, going ahead.` : `Hold on — ${result.message}`, "thinking");
             return result;
           },
         }),
@@ -214,7 +214,7 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
     done({ error: errorMsg }, "error");
     devLog.error("orchestrator", `Orchestrator failed: ${errorMsg}`);
-    sendThought("Narrator", `Sorry, I ran into a problem: ${errorMsg}`);
+    sendThought("Narrator", `Sorry, I ran into a problem: ${errorMsg}`, "thinking");
     return {
       success: false,
       message: `Sorry, something went wrong. ${errorMsg}`,

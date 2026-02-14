@@ -9,6 +9,7 @@ interface ThoughtSnapshot {
   id: string;
   agent: string;
   message: string;
+  type?: "thinking" | "answer";
 }
 
 interface ChatMessage {
@@ -201,7 +202,7 @@ export default function ChatPanel() {
       // Snapshot the thoughts that occurred during this request (use ref for latest)
       const capturedThoughts = thoughtsRef.current
         .filter((t) => t.timestamp >= requestTimestamp.current)
-        .map((t) => ({ id: t.id, agent: t.agent, message: t.message }));
+        .map((t) => ({ id: t.id, agent: t.agent, message: t.message, type: t.type }));
 
       setMessages((prev) => [
         ...prev,
@@ -450,22 +451,36 @@ export default function ChatPanel() {
                                 const isNarrator = from === "Narrator";
 
                                 if (isNarrator) {
+                                  const isAnswer = t.type === "answer";
                                   return (
                                     <div key={`t-${t.id}`} className="flex gap-2 py-0.5 pl-2">
                                       <div className="min-w-0">
-                                        <span
-                                          className="text-[9px] uppercase tracking-[0.15em] font-bold"
-                                          style={{
-                                            fontFamily: "var(--font-display)",
-                                            color: "var(--color-gideon-green)",
-                                            opacity: 0.4,
-                                          }}
-                                        >
-                                          Narrator
+                                        <span className="flex items-center gap-1.5">
+                                          <span
+                                            className="text-[9px] uppercase tracking-[0.15em] font-bold"
+                                            style={{
+                                              fontFamily: "var(--font-display)",
+                                              color: isAnswer ? "var(--color-gideon-yellow)" : "var(--color-gideon-green)",
+                                              opacity: isAnswer ? 0.7 : 0.4,
+                                            }}
+                                          >
+                                            Narrator
+                                          </span>
+                                          <span
+                                            className="text-[7px] uppercase tracking-[0.1em] px-1 py-px rounded"
+                                            style={{
+                                              fontFamily: "var(--font-display)",
+                                              color: isAnswer ? "var(--color-gideon-yellow)" : "var(--color-gideon-muted)",
+                                              background: isAnswer ? "rgba(212,255,0,0.08)" : "rgba(255,255,255,0.03)",
+                                              opacity: isAnswer ? 0.8 : 0.4,
+                                            }}
+                                          >
+                                            {isAnswer ? "answer" : "thinking"}
+                                          </span>
                                         </span>
                                         <p
                                           className="text-[11px] leading-relaxed mt-0.5"
-                                          style={{ color: "rgba(255,255,255,0.45)" }}
+                                          style={{ color: isAnswer ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.45)" }}
                                         >
                                           {t.message}
                                         </p>
@@ -535,6 +550,7 @@ export default function ChatPanel() {
                 const isNarrator = from === "Narrator";
 
                 if (isNarrator) {
+                  const isAnswer = t.type === "answer";
                   return (
                     <motion.div
                       key={`live-${t.id}`}
@@ -546,24 +562,40 @@ export default function ChatPanel() {
                       <div
                         className="w-[2px] flex-none rounded-full mt-0.5"
                         style={{
-                          background: "linear-gradient(180deg, var(--color-gideon-green), transparent)",
-                          opacity: 0.6,
+                          background: isAnswer
+                            ? "linear-gradient(180deg, var(--color-gideon-yellow), transparent)"
+                            : "linear-gradient(180deg, var(--color-gideon-green), transparent)",
+                          opacity: isAnswer ? 0.9 : 0.6,
                         }}
                       />
                       <div className="min-w-0">
-                        <span
-                          className="text-[9px] uppercase tracking-[0.2em] font-bold"
-                          style={{
-                            fontFamily: "var(--font-display)",
-                            color: "var(--color-gideon-green)",
-                            opacity: 0.6,
-                          }}
-                        >
-                          Narrator
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="text-[9px] uppercase tracking-[0.2em] font-bold"
+                            style={{
+                              fontFamily: "var(--font-display)",
+                              color: isAnswer ? "var(--color-gideon-yellow)" : "var(--color-gideon-green)",
+                              opacity: isAnswer ? 0.9 : 0.6,
+                            }}
+                          >
+                            Narrator
+                          </span>
+                          <span
+                            className="text-[8px] uppercase tracking-[0.15em] px-1.5 py-0.5 rounded"
+                            style={{
+                              fontFamily: "var(--font-display)",
+                              color: isAnswer ? "var(--color-gideon-yellow)" : "var(--color-gideon-muted)",
+                              background: isAnswer ? "rgba(212,255,0,0.1)" : "rgba(255,255,255,0.04)",
+                              border: `1px solid ${isAnswer ? "rgba(212,255,0,0.2)" : "rgba(255,255,255,0.06)"}`,
+                              opacity: isAnswer ? 1 : 0.5,
+                            }}
+                          >
+                            {isAnswer ? "answer" : "thinking"}
+                          </span>
                         </span>
                         <p
                           className="text-sm leading-relaxed mt-0.5"
-                          style={{ color: "rgba(255,255,255,0.85)" }}
+                          style={{ color: isAnswer ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)" }}
                         >
                           {t.message}
                         </p>

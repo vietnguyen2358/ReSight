@@ -9,6 +9,7 @@ export interface ThoughtEntry {
   agent: string;
   message: string;
   timestamp: number;
+  type?: "thinking" | "answer";
 }
 
 export interface BoundingBox {
@@ -23,7 +24,7 @@ interface GideonContextValue {
   status: GideonStatus;
   setStatus: (s: GideonStatus) => void;
   thoughts: ThoughtEntry[];
-  addThought: (agent: string, message: string) => void;
+  addThought: (agent: string, message: string, type?: "thinking" | "answer") => void;
   latestScreenshot: string | null;
   setLatestScreenshot: (s: string | null) => void;
   boundingBoxes: BoundingBox[];
@@ -47,10 +48,10 @@ export function GideonProvider({ children }: { children: React.ReactNode }) {
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const idCounter = useRef(0);
 
-  const addThought = useCallback((agent: string, message: string) => {
+  const addThought = useCallback((agent: string, message: string, type?: "thinking" | "answer") => {
     setThoughts((prev) => [
       ...prev.slice(-99),
-      { id: String(++idCounter.current), agent, message, timestamp: Date.now() },
+      { id: String(++idCounter.current), agent, message, timestamp: Date.now(), type },
     ]);
 
     if (!["Voice", "Gideon"].includes(agent)) {
@@ -66,8 +67,8 @@ export function GideonProvider({ children }: { children: React.ReactNode }) {
       try {
         const data = JSON.parse(event.data);
         if (data.agent && data.message) {
-          console.log(`[${data.agent}] ${data.message}`);
-          addThought(data.agent, data.message);
+          console.log(`[${data.agent}] [${data.type || "thinking"}] ${data.message}`);
+          addThought(data.agent, data.message, data.type);
         }
       } catch {
         // ignore parse errors

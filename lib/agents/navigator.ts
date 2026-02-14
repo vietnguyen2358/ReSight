@@ -218,12 +218,12 @@ export async function navigatorAgent(
 
   function forceStop(reason: string) {
     if (forceStopReason) return; // already stopping
-    forceStopReason = reason;
     devLog.warn("navigator", `FORCE STOP: ${reason}`);
-    // Don't narrate "wrapping up" on user cancellation — keep it clean
+    // Send wrap-up message BEFORE setting flag so it passes the sendThought guard
     if (reason !== "Cancelled by user") {
-      sendThought("Narrator", "Let me wrap up and tell you what I found.");
+      sendThought("Narrator", "Let me wrap up and tell you what I found.", "thinking");
     }
+    forceStopReason = reason;
     try { controller.abort(); } catch { /* ignore */ }
   }
 
@@ -311,9 +311,11 @@ export async function navigatorAgent(
   const narratorMessages: string[] = [];
   const originalSendThought: SendThoughtFn = sendThought;
   // Intercept narrator thoughts so we can build a fallback summary
-  sendThought = (agent: string, message: string) => {
+  // and suppress any thoughts after force-stop (tools may still run briefly after abort)
+  sendThought = (agent: string, message: string, type?: "thinking" | "answer") => {
+    if (forceStopReason) return; // suppress all thoughts after force-stop
     if (agent === "Narrator") narratorMessages.push(message);
-    originalSendThought(agent, message);
+    originalSendThought(agent, message, type);
   };
 
   try {
@@ -367,7 +369,7 @@ export async function navigatorAgent(
             try {
               const hostname = new URL(fullUrl).hostname.replace("www.", "");
               if (BLOCKED_DOMAINS.some((d) => hostname === d || hostname.endsWith(`.${d}`))) {
-                sendThought("Narrator", `That site blocks automated browsers. Let me try a different approach...`);
+                sendThought("Narrator", `That site blocks automated browsers. Let me try a different approach...`, "thinking");
                 return {
                   blocked: true,
                   blockType: "Known CAPTCHA site",
@@ -387,7 +389,7 @@ export async function navigatorAgent(
             const navMessage = searchQuery
               ? `Searching ${siteName.replace("google.com", "Google").replace("bing.com", "Bing")} for "${searchQuery}"...`
               : `Opening ${siteName}...`;
-            sendThought("Narrator", navMessage);
+            sendThought("Narrator", navMessage, "thinking");
 
             // Track URL for go-back support
             setLastUrl(page.url());
@@ -399,7 +401,7 @@ export async function navigatorAgent(
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               navTimer({ success: false, error: msg }, "warn");
-              sendThought("Narrator", "The page is loading a bit slowly, but I'll keep going...");
+              sendThought("Narrator", "The page is loading a bit slowly, but I'll keep going...", "thinking");
             }
 
             // Wait longer to give Browserbase captcha solver time to work
@@ -415,7 +417,7 @@ export async function navigatorAgent(
             const blockType = detectBotBlock(String(ctx.pageContent || ""), String(ctx.pageTitle || ""));
             if (blockType) {
               devLog.warn("navigator", `Bot block detected: ${blockType} on ${fullUrl}`);
-              sendThought("Narrator", `That site is blocking me. Let me try a different approach...`);
+              sendThought("Narrator", `That site is blocking me. Let me try a different approach...`, "thinking");
               return {
                 ...ctx,
                 blocked: true,
@@ -465,7 +467,7 @@ export async function navigatorAgent(
                   : action.toLowerCase().startsWith("press")
                     ? `Pressing ${action.replace(/^press\s+/i, "")}...`
                     : `${action}...`;
-            sendThought("Narrator", friendlyAction);
+            sendThought("Narrator", friendlyAction, "thinking");
 
             const actTimer = devLog.time("stagehand", `act("${action}")  [via navigator tool]`);
             try {
@@ -477,7 +479,7 @@ export async function navigatorAgent(
               actTimer({ success: false, error: msg }, "error");
               devLog.error("navigator", `[Step ${stepNumber}] Action FAILED: "${action}"`, { error: msg });
               consecutiveFailures++;
-              sendThought("Narrator", `That didn't quite work — let me try a different approach...`);
+              sendThought("Narrator", `That didn't quite work — let me try a different approach...`, "thinking");
               await captureScreenshot(page);
               const errCtx = await getPageContext(page);
               return { ...errCtx, error: msg };
@@ -491,7 +493,7 @@ export async function navigatorAgent(
             // Track content for stale page detection
             const contentLoop = trackContent(String(ctx.pageContent || ""));
             if (contentLoop) {
-              sendThought("Narrator", "The page doesn't seem to be changing. Let me wrap up with what I have.");
+              sendThought("Narrator", "The page doesn't seem to be changing. Let me wrap up with what I have.", "thinking");
               return { ...ctx, error: contentLoop };
             }
 
@@ -533,7 +535,7 @@ export async function navigatorAgent(
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               devLog.warn("navigator", `extract failed, falling back to innerText`, { error: msg });
-              sendThought("Narrator", "Having a bit of trouble reading this page, let me try another way...");
+              sendThought("Narrator", "Having a bit of trouble reading this page, let me try another way...", "thinking");
               const fallbackText = await page
                 .evaluate(() => document.body.innerText.substring(0, 3000))
                 .catch(() => "Could not read page text");
@@ -553,7 +555,6 @@ export async function navigatorAgent(
             if (forceStopReason) return { error: forceStopReason, forceStopped: true };
             stepNumber++;
             devLog.info("navigator", `[Step ${stepNumber}] narrate: "${description.substring(0, 200)}"`);
-            sendThought("Narrator", description);
 
             // Detect if this narration contains a substantive answer (prices, ratings, summaries)
             const hasSpecificData = /\$\d|★|⭐|\d+\.\d+.star|\d+ star|rating/i.test(description);
@@ -562,11 +563,13 @@ export async function navigatorAgent(
               substantiveNarrations++;
               // After 2 substantive answers, the model has what it needs — force stop
               if (substantiveNarrations >= 2) {
+                sendThought("Narrator", description, "answer");
                 finalMessage = description;
                 forceStop("Answer found — stopping to avoid repetition");
                 return { narrated: true, done: true };
               }
             }
+            sendThought("Narrator", description, "thinking");
             return { narrated: true };
           },
         }),
@@ -585,11 +588,11 @@ export async function navigatorAgent(
 
             stepNumber++;
             devLog.info("navigator", `[Step ${stepNumber}] ask_user: "${question}"`);
-            sendThought("Narrator", `Question: ${question}`);
+            sendThought("Narrator", `Question: ${question}`, "thinking");
 
             const answer = await askQuestion(question, options);
             devLog.info("navigator", `[Step ${stepNumber}] User answered: "${answer}"`);
-            sendThought("Navigator", `User responded: "${answer}"`);
+            sendThought("Navigator", `User responded: "${answer}"`, "thinking");
 
             return { userAnswer: answer };
           },
@@ -604,7 +607,7 @@ export async function navigatorAgent(
           execute: async ({ summary }) => {
             stepNumber++;
             devLog.info("navigator", `[Step ${stepNumber}] done: "${summary.substring(0, 200)}"`);
-            sendThought("Narrator", summary);
+            sendThought("Narrator", summary, "answer");
             finalMessage = summary;
             await captureScreenshot(page);
             return { done: true };
@@ -650,14 +653,19 @@ export async function navigatorAgent(
         return { success: true, message: "Stopped." };
       }
 
-      const message = finalMessage || `I had to stop early (${forceStopReason}). Here's what I found so far on the page.`;
-      sendThought("Narrator", message);
+      // If finalMessage is already set, it was already narrated by the tool that set it
+      // (narrate or done), so don't re-send it as a thought.
+      if (finalMessage) {
+        return { success: true, message: finalMessage };
+      }
+      const message = `I had to stop early (${forceStopReason}). Here's what I found so far on the page.`;
+      sendThought("Narrator", message, "answer");
       return { success: true, message };
     }
 
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
     devLog.error("navigator", `Navigator failed: ${errorMsg}`);
-    sendThought("Narrator", `I ran into a problem — ${errorMsg}. Let me try a different approach.`);
+    sendThought("Narrator", `I ran into a problem — ${errorMsg}. Let me try a different approach.`, "thinking");
 
     // Try a simple direct navigation as last resort
     try {
@@ -666,7 +674,7 @@ export async function navigatorAgent(
       if (page) {
         const url = buildSearchUrl(instruction);
         devLog.warn("navigator", `Fallback: direct navigation to ${url}`);
-        sendThought("Narrator", `Let me try searching for that directly...`);
+        sendThought("Narrator", `Let me try searching for that directly...`, "thinking");
         await page.goto(url, { waitUntil: "domcontentloaded", timeoutMs: 15000 });
         await captureScreenshot(page);
         return {

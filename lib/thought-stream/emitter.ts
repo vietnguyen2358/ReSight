@@ -1,9 +1,12 @@
 import { EventEmitter } from "events";
 
+export type ThoughtType = "thinking" | "answer";
+
 export interface ThoughtEvent {
   agent: string;
   message: string;
   timestamp: number;
+  type?: ThoughtType;
 }
 
 class ThoughtEmitter extends EventEmitter {
@@ -26,8 +29,8 @@ class ThoughtEmitter extends EventEmitter {
     return [...this.history];
   }
 
-  sendThought(agent: string, message: string): void {
-    this.emit("thought", { agent, message, timestamp: Date.now() });
+  sendThought(agent: string, message: string, type?: ThoughtType): void {
+    this.emit("thought", { agent, message, timestamp: Date.now(), type });
   }
 }
 
