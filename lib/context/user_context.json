@@ -74,6 +74,11 @@
       "pattern": "find me the best boba in sf",
       "steps": "I found the best boba spots in San Francisco for you! The top-rated place is Junbi Matcha & Tea on Market St with an impressive 4.9 stars - people love their perfectly steeped tea and perfectly chewy ",
       "timestamp": 1771093250844
+    },
+    {
+      "pattern": "find me the best boba in san jose",
+      "steps": "I found the best boba spots in San Jose for you! Here are the top-rated options:\n\n**The Best (4.8 stars):**\n1. **Teaspoon Almaden** - 4750 Almaden Expy, 4.8 stars (461 reviews). Customers rave about \"",
+      "timestamp": 1771093486722
     }
   ]
 }

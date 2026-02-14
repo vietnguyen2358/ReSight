@@ -42,6 +42,8 @@ export default function VoiceManager() {
   const [micMuted, setMicMuted] = useState(true);
   const actionInFlight = useRef(false);
   const lastHandledUtterance = useRef<string>("");
+  const acceptingToolInstruction = useRef(false);
+  const lastToolInstructionAt = useRef(0);
   const lastToggleAt = useRef(0);
   const lastVoiceStatus = useRef<string>("");
 
@@ -61,6 +63,7 @@ export default function VoiceManager() {
       if (shouldIgnoreUtterance(instruction)) return "Ignored empty instruction.";
 
       actionInFlight.current = true;
+      acceptingToolInstruction.current = false;
       lastHandledUtterance.current = instruction;
       setMicMuted(true);
       setStatus("thinking");
@@ -143,8 +146,16 @@ export default function VoiceManager() {
         connectionType: "websocket",
         clientTools: {
           triggerBrowserAction: async (params: Record<string, unknown>) => {
+            if (!acceptingToolInstruction.current) {
+              return "Waiting for user input. Press speak and provide a new instruction.";
+            }
             const instruction = String(params.instruction || "").trim();
             if (!instruction) return "No instruction received.";
+            const now = Date.now();
+            if (now - lastToolInstructionAt.current < 3000) {
+              return "Instruction already being processed.";
+            }
+            lastToolInstructionAt.current = now;
             return runInstruction(instruction);
           },
         },
@@ -171,6 +182,7 @@ export default function VoiceManager() {
       const next = !prev;
       setStatus(next ? "idle" : "listening");
       addVoiceStatus(next ? "Mic muted" : "Listening...");
+      acceptingToolInstruction.current = !next;
       return next;
     });
   }, [conversation.status, connect, setStatus, addVoiceStatus]);
