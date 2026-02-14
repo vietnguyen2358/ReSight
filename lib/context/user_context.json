@@ -1,41 +1,6 @@
 {
   "_learned_flows": [
     {
-      "pattern": "Find information about the development team at the San Jose State University SCE club",
-      "steps": "I found detailed information about the SCE Development Team at San Jose State University! Here's what I learned:\n\n**How to Join:** The development team is open to ALL students with no prior experience",
-      "timestamp": 1771065745900
-    },
-    {
-      "pattern": "Find detailed information about the development team at the San Jose State University SCE club",
-      "steps": "Completed. Currently on: https://sce.sjsu.edu/about",
-      "timestamp": 1771065915089
-    },
-    {
-      "pattern": "Find 5 alumni from the San Jose State University SCE club with their names and LinkedIn profiles tha",
-      "steps": "I explored the SCE SJSU website looking for alumni information with LinkedIn profiles, but unfortunately I wasn't able to find a dedicated alumni page or section that lists past members with their con",
-      "timestamp": 1771067121350
-    },
-    {
-      "pattern": "On the SCE SJSU website, look for an alumni page or section that lists past members with their Linke",
-      "steps": "Completed. Currently on: https://sce.sjsu.edu/",
-      "timestamp": 1771066172942
-    },
-    {
-      "pattern": "Find 5 alumni from the San Jose State University SCE club with their names and LinkedIn profiles",
-      "steps": "I explored the SCE SJSU website looking for alumni information with LinkedIn profiles, but unfortunately I wasn't able to find a dedicated alumni page or section. I checked the main homepage, the Abou",
-      "timestamp": 1771066961262
-    },
-    {
-      "pattern": "could you find 3 highly rated pizza place in sf for dinner tonight",
-      "steps": "I found 3 highly rated pizza places in San Francisco for your dinner tonight: Hi Hat (5.0 stars on Valencia St), Sforno Pizzeria Napoletana (4.9 stars on Octavia St - authentic Italian/Neapolitan styl",
-      "timestamp": 1771067297139
-    },
-    {
-      "pattern": "Get directions to Mitchell's Ice Cream",
-      "steps": "I've successfully got you to the directions page for Mitchell's Ice Cream on Google Maps! The destination is all set - it's at 688 San Jose Ave, San Francisco, CA 94110. The shop has a 4.7 star rating",
-      "timestamp": 1771067460274
-    },
-    {
       "pattern": "navigate me to the nearest bagel place",
       "steps": "I've navigated you to the nearest bagel place! It's Izzy's Brooklyn Bagels, located at 477 California Ave in Palo Alto with a 4.5 star rating. It's a bagel cafe with NY roots that offers spreads and o",
       "timestamp": 1771067903255
@@ -79,6 +44,61 @@
       "pattern": "find me the best boba in san jose",
       "steps": "I found the best boba spots in San Jose for you! Here are the top-rated options:\n\n**The Best (4.8 stars):**\n1. **Teaspoon Almaden** - 4750 Almaden Expy, 4.8 stars (461 reviews). Customers rave about \"",
       "timestamp": 1771093486722
+    },
+    {
+      "pattern": "Search for best boba spots in San Jose and find the price of Thai tea at the top rated location",
+      "steps": "I had to stop early (Cancelled by user). Here's what I found so far on the page.",
+      "timestamp": 1771095550522
+    },
+    {
+      "pattern": "Find the best boba shop in San Jose and provide the price of their Thai tea.",
+      "steps": "I had to stop early (Cancelled by user). Here's what I found so far on the page.",
+      "timestamp": 1771095554195
+    },
+    {
+      "pattern": "Search for Teaspoon Almaden boba menu price of Thai tea",
+      "steps": "I checked the Google search results and the Teaspoon website. The menu page lists a “Slow‑steeped Thai tea topped with cream & honey boba” under Classics, but it doesn't show a price on that page. How",
+      "timestamp": 1771095844041
+    },
+    {
+      "pattern": "Find the menu price of Thai tea at Teaspoon Almaden boba shop in San Jose",
+      "steps": "I had to stop early (Cancelled by user). Here's what I found so far on the page.",
+      "timestamp": 1771095561411
+    },
+    {
+      "pattern": "Find the best boba shop in San Jose and provide the price of Thai tea.",
+      "steps": "Completed. Currently on: https://www.google.com/search?q=best+rating+boba+shop+San+Jose",
+      "timestamp": 1771095800588
+    },
+    {
+      "pattern": "Search for the best boba shop in San Francisco and find the price of their matcha latte",
+      "steps": "I opened a search for that. Currently on: https://www.google.com/search?q=Search%20for%20the%20best%20boba%20shop%20in%20San%20Francisco%20and%20find%20the%20price%20of%20their%20matcha%20latte",
+      "timestamp": 1771096233026
+    },
+    {
+      "pattern": "Search for price of matcha latte at Junbi Matcha & Tea in San Francisco and find the best boba place",
+      "steps": "**Junbi Matcha & Tea – Matcha Latte price (San Francisco)**  \n- Cold Matcha Latte (3 oz): **$9.43** (average from Uber Eats listings)  \n- Cold Guava Matcha Latte (3 oz): **$10.08**  \n- Cold Strawberry",
+      "timestamp": 1771096385106
+    },
+    {
+      "pattern": "Search for the best boba shop in San Jose and find the price of Thai tea",
+      "steps": "I’ve done a quick search for the top‑rated boba spots in San Jose and checked their menus for Thai‑tea prices.\n\n**Best spot:** Teaspoon (Hostetter Rd, San Jose) – 4.7 stars on Google and 4.6 on Yelp, ",
+      "timestamp": 1771096882088
+    },
+    {
+      "pattern": "Search for \"Teaspoon San Jose boba Thai tea price\"",
+      "steps": "I searched Google for Teaspoon San Jose boba Thai‑tea price. The snippet and several delivery‑app links show the Classic Thai Tea with honey boba at about $7.00–$7.75. The DoorDash menu lists it for $",
+      "timestamp": 1771097102633
+    },
+    {
+      "pattern": "find me the best boba place in san jose and the price of their thai tea",
+      "steps": "I found the best boba place in San Jose for you! It's **Boba Bliss** located at 1671 N Capitol Ave, with an impressive 4.8-star rating out of 68 reviews. Customers rave about their \"top tier vibes, ki",
+      "timestamp": 1771098830833
+    },
+    {
+      "pattern": "find the best boba spot in sf and their thai tea price",
+      "steps": "Great! I found the search results for By Me Boba Tea's Thai tea price. I can see their location at 22 Ross Alley in San Francisco with a 4.7 star rating. The Grubhub menu link shows Thai tea for $6.75",
+      "timestamp": 1771099406034
     }
   ]
 }

@@ -60,6 +60,9 @@ After every goto_url and after any do_action that changes the page, you MUST cal
 - **Captchas**: Tell the user: "There's a captcha here that I can't solve, unfortunately."
 - **Access denied / bot blocks**: If a goto_url result contains "blocked":true or the page title says "Access Denied" or similar, do NOT retry the same site or domain. Immediately fall back to Google search.
 
+## BLOCKED SITES (NEVER visit these — they always block us)
+- yelp.com — always triggers CAPTCHA. Use Google search or an alternative site instead.
+
 ## BOT BLOCK FALLBACK (CRITICAL)
 Many sites block automated browsers. When you get blocked (page title says "Access Denied", "Just a moment", "Forbidden", or the tool result has "blocked":true):
 1. Do NOT retry the same site — it will fail again
@@ -193,18 +196,18 @@ export async function navigatorAgent(
   sendThought: SendThoughtFn
 ): Promise<AgentResult> {
   devLog.info("navigator", `========== START: "${instruction}" ==========`);
-  sendThought("Narrator", `Alright, let me work on that for you...`);
 
   let stepNumber = 0;
   let consecutiveFailures = 0;
+  let substantiveNarrations = 0;
   const actionHistory: Map<string, number> = new Map();
   const urlHistory: string[] = [];
   const contentHashes: string[] = [];
   let staleCount = 0;
-  const MAX_REPEATS = 2;
-  const MAX_CONSECUTIVE_FAILURES = 3;
-  const MAX_STALE_PAGES = 3;
-  const HARD_STEP_LIMIT = 10;
+  const MAX_REPEATS = 5;
+  const MAX_CONSECUTIVE_FAILURES = 6;
+  const MAX_STALE_PAGES = 6;
+  const HARD_STEP_LIMIT = 30;
 
   // ── Force-stop mechanism ──
   // AbortController kills the generateText loop at the code level.
@@ -217,7 +220,10 @@ export async function navigatorAgent(
     if (forceStopReason) return; // already stopping
     forceStopReason = reason;
     devLog.warn("navigator", `FORCE STOP: ${reason}`);
-    sendThought("Narrator", "Let me wrap up and tell you what I found.");
+    // Don't narrate "wrapping up" on user cancellation — keep it clean
+    if (reason !== "Cancelled by user") {
+      sendThought("Narrator", "Let me wrap up and tell you what I found.");
+    }
     try { controller.abort(); } catch { /* ignore */ }
   }
 
@@ -302,6 +308,13 @@ export async function navigatorAgent(
   }
 
   let finalMessage = "";
+  const narratorMessages: string[] = [];
+  const originalSendThought: SendThoughtFn = sendThought;
+  // Intercept narrator thoughts so we can build a fallback summary
+  sendThought = (agent: string, message: string) => {
+    if (agent === "Narrator") narratorMessages.push(message);
+    originalSendThought(agent, message);
+  };
 
   try {
     const stagehand = await getStagehand();
@@ -320,7 +333,6 @@ export async function navigatorAgent(
 
     const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${learnedContext}\n\nTask: ${instruction}`;
 
-    sendThought("Narrator", `Let me figure out the best way to do this...`);
 
     devLog.info("llm", "Navigator generateText call", {
       prompt: navigatorPrompt,
@@ -333,7 +345,7 @@ export async function navigatorAgent(
       model: getModel(),
       system: NAVIGATOR_SYSTEM,
       prompt: navigatorPrompt,
-      stopWhen: stepCountIs(12),
+      stopWhen: stepCountIs(30),
       abortSignal: controller.signal,
       tools: {
         goto_url: tool({
@@ -350,13 +362,32 @@ export async function navigatorAgent(
             let fullUrl = url;
             if (!fullUrl.startsWith("http")) fullUrl = `https://${fullUrl}`;
 
+            // Hard-block sites that always trigger CAPTCHAs
+            const BLOCKED_DOMAINS = ["yelp.com"];
+            try {
+              const hostname = new URL(fullUrl).hostname.replace("www.", "");
+              if (BLOCKED_DOMAINS.some((d) => hostname === d || hostname.endsWith(`.${d}`))) {
+                sendThought("Narrator", `That site blocks automated browsers. Let me try a different approach...`);
+                return {
+                  blocked: true,
+                  blockType: "Known CAPTCHA site",
+                  suggestion: `${hostname} always blocks automated browsers. Use Google search instead: goto_url("https://www.google.com/search?q=${encodeURIComponent(instruction)}")`,
+                };
+              }
+            } catch { /* ignore URL parse errors */ }
+
             const loopMsg = checkLoop("goto_url", fullUrl);
             if (loopMsg) return { error: loopMsg, currentUrl: page.url(), pageTitle: await page.title().catch(() => "") };
 
             devLog.info("navigation", `[Step ${stepNumber}] goto_url: ${fullUrl}`);
-            // Extract a friendly site name from the URL
-            const siteName = new URL(fullUrl).hostname.replace("www.", "");
-            sendThought("Narrator", `Opening ${siteName}...`);
+            // Build a descriptive navigation message
+            const parsedUrl = new URL(fullUrl);
+            const siteName = parsedUrl.hostname.replace("www.", "");
+            const searchQuery = parsedUrl.searchParams.get("q") || parsedUrl.searchParams.get("query") || parsedUrl.searchParams.get("searchTerm") || parsedUrl.searchParams.get("k");
+            const navMessage = searchQuery
+              ? `Searching ${siteName.replace("google.com", "Google").replace("bing.com", "Bing")} for "${searchQuery}"...`
+              : `Opening ${siteName}...`;
+            sendThought("Narrator", navMessage);
 
             // Track URL for go-back support
             setLastUrl(page.url());
@@ -376,7 +407,6 @@ export async function navigatorAgent(
             await captureScreenshot(page);
 
             const pageTitle = await page.title().catch(() => fullUrl);
-            sendThought("Narrator", `The page has loaded — I'm on "${pageTitle}" now.`);
 
             const ctx = await getPageContext(page);
             consecutiveFailures = 0;
@@ -490,7 +520,6 @@ export async function navigatorAgent(
             if (loopMsg) return { error: loopMsg };
 
             devLog.info("navigator", `[Step ${stepNumber}] extract_info: "${extractInstruction}"`);
-            sendThought("Narrator", `Let me read through what's on the page...`);
 
             try {
               const extractTimer = devLog.time("stagehand", `extract("${extractInstruction}")`);
@@ -499,7 +528,6 @@ export async function navigatorAgent(
                 success: true,
                 resultPreview: JSON.stringify(result).substring(0, 500),
               });
-              sendThought("Narrator", "Got it — I've found the information you need.");
               await captureScreenshot(page);
               return result;
             } catch (err) {
@@ -526,6 +554,19 @@ export async function navigatorAgent(
             stepNumber++;
             devLog.info("navigator", `[Step ${stepNumber}] narrate: "${description.substring(0, 200)}"`);
             sendThought("Narrator", description);
+
+            // Detect if this narration contains a substantive answer (prices, ratings, summaries)
+            const hasSpecificData = /\$\d|★|⭐|\d+\.\d+.star|\d+ star|rating/i.test(description);
+            const isSummaryLike = description.length > 150 && (hasSpecificData || /found|here's|result/i.test(description));
+            if (isSummaryLike) {
+              substantiveNarrations++;
+              // After 2 substantive answers, the model has what it needs — force stop
+              if (substantiveNarrations >= 2) {
+                finalMessage = description;
+                forceStop("Answer found — stopping to avoid repetition");
+                return { narrated: true, done: true };
+              }
+            }
             return { narrated: true };
           },
         }),
@@ -578,7 +619,17 @@ export async function navigatorAgent(
       finalUrl: page.url(),
     });
 
-    const message = finalMessage || text || `Completed. Currently on: ${page.url()}`;
+    // Build the best possible summary
+    let message = finalMessage || text;
+    if (!message) {
+      // Use the last narrator narration as fallback (skip action descriptions like "Opening..." / "Clicking...")
+      const narrations = narratorMessages.filter(
+        (m) => !m.endsWith("...") || m.length > 80
+      );
+      message = narrations.length > 0
+        ? narrations[narrations.length - 1]
+        : `I finished browsing. Currently on: ${await page.title().catch(() => page.url())}`;
+    }
     devLog.info("navigator", `========== DONE (${stepNumber} steps) ==========`, {
       message: message.substring(0, 300),
     });
@@ -593,6 +644,12 @@ export async function navigatorAgent(
         const p = stagehand.context.activePage();
         if (p) await captureScreenshot(p);
       } catch { /* ignore */ }
+
+      // User-initiated cancel: just stop cleanly, no summary
+      if (forceStopReason === "Cancelled by user") {
+        return { success: true, message: "Stopped." };
+      }
+
       const message = finalMessage || `I had to stop early (${forceStopReason}). Here's what I found so far on the page.`;
       sendThought("Narrator", message);
       return { success: true, message };

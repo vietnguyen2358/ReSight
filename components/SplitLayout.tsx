@@ -11,31 +11,33 @@ export default function SplitLayout() {
 
   return (
     <div className="flex h-screen w-screen bg-gideon-black relative">
-      {/* Mind Pane */}
+      {/* Mind Pane — always mounted to preserve chat state */}
       <div
         className="h-full overflow-hidden transition-all duration-500 ease-in-out"
         style={{
           width:
             view === "split" ? "50%" : view === "mind" ? "100%" : "0%",
           opacity: view === "world" ? 0 : 1,
+          pointerEvents: view === "world" ? "none" : "auto",
         }}
       >
-        {view !== "world" && <MindPane />}
+        <MindPane />
       </div>
 
       {/* Glow Divider — only in split view */}
       {view === "split" && <div className="glow-divider flex-none" />}
 
-      {/* World Pane */}
+      {/* World Pane — always mounted to preserve state */}
       <div
         className="h-full overflow-hidden transition-all duration-500 ease-in-out"
         style={{
           width:
             view === "split" ? "50%" : view === "world" ? "100%" : "0%",
           opacity: view === "mind" ? 0 : 1,
+          pointerEvents: view === "mind" ? "none" : "auto",
         }}
       >
-        {view !== "mind" && <WorldPane />}
+        <WorldPane />
       </div>
 
       {/* ── Toggle Controls ── */}

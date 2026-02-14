@@ -5,11 +5,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useGideon } from "@/components/providers/GideonProvider";
 import { MovingBorder } from "@/components/ui/moving-border";
 
+interface ThoughtSnapshot {
+  id: string;
+  agent: string;
+  message: string;
+}
+
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   text: string;
   timestamp: number;
+  thoughts?: ThoughtSnapshot[];
 }
 
 interface PendingQuestion {
@@ -23,11 +30,12 @@ function parseAgent(agent: string): { from: string; to?: string } {
   return { from: agent };
 }
 
-const INTERRUPT_PATTERN = /^(stop|cancel|wait|never\s*mind|halt|pause|go\s*back|back|undo|previous(\s*page)?)$/i;
+const INTERRUPT_PATTERN = /\b(stop|cancel|wait|never\s*mind|halt|pause|go\s*back|go back|back|undo|previous(\s*page)?)\b/i;
 
 export default function ChatPanel() {
   const { setStatus, thoughts, status } = useGideon();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState<PendingQuestion | null>(null);
@@ -37,10 +45,42 @@ export default function ChatPanel() {
   const requestTimestamp = useRef(0);
   const feedRef = useRef<HTMLDivElement>(null);
   const questionPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const thoughtsRef = useRef(thoughts);
+
+  // Keep thoughtsRef in sync so we can read latest inside async callbacks
+  useEffect(() => {
+    thoughtsRef.current = thoughts;
+  }, [thoughts]);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Escape key interrupt
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && loading) {
+        e.preventDefault();
+        // Fire stop command to orchestrator
+        fetch("/api/orchestrator", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ instruction: "stop" }),
+        }).catch(() => {});
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `user-${++idRef.current}`,
+            role: "user",
+            text: "stop",
+            timestamp: Date.now(),
+          },
+        ]);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [loading]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -158,6 +198,11 @@ export default function ChatPanel() {
       });
       const result = await res.json();
 
+      // Snapshot the thoughts that occurred during this request (use ref for latest)
+      const capturedThoughts = thoughtsRef.current
+        .filter((t) => t.timestamp >= requestTimestamp.current)
+        .map((t) => ({ id: t.id, agent: t.agent, message: t.message }));
+
       setMessages((prev) => [
         ...prev,
         {
@@ -165,6 +210,7 @@ export default function ChatPanel() {
           role: "assistant",
           text: result?.message || "Action completed.",
           timestamp: Date.now(),
+          thoughts: capturedThoughts,
         },
       ]);
     } catch (err) {
@@ -325,31 +371,153 @@ export default function ChatPanel() {
                   {msg.text}
                 </div>
               ) : (
-                <div className="max-w-[90%] flex gap-3">
-                  <div
-                    className="w-[2px] flex-none rounded-full mt-1"
-                    style={{
-                      background: "linear-gradient(180deg, var(--color-gideon-green), transparent)",
-                      opacity: 0.4,
-                    }}
-                  />
-                  <div>
-                    <span
-                      className="text-[9px] uppercase tracking-[0.2em] font-bold"
+                <div className="max-w-[90%]">
+                  {/* Final response */}
+                  <div className="flex gap-3">
+                    <div
+                      className="w-[2px] flex-none rounded-full mt-1"
                       style={{
-                        fontFamily: "var(--font-display)",
-                        color: "var(--color-gideon-green)",
-                        opacity: 0.5,
+                        background: "linear-gradient(180deg, var(--color-gideon-green), transparent)",
+                        opacity: 0.4,
                       }}
-                    >
-                      Gideon
-                    </span>
-                    <p
-                      className="text-[13px] leading-relaxed mt-1"
-                      style={{ color: "rgba(255,255,255,0.85)" }}
-                    >
-                      {msg.text}
-                    </p>
+                    />
+                    <div className="min-w-0">
+                      <span
+                        className="text-[9px] uppercase tracking-[0.2em] font-bold"
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          color: "var(--color-gideon-green)",
+                          opacity: 0.5,
+                        }}
+                      >
+                        Gideon
+                      </span>
+                      <p
+                        className="text-[13px] leading-relaxed mt-1"
+                        style={{ color: "rgba(255,255,255,0.85)" }}
+                      >
+                        {msg.text}
+                      </p>
+
+                      {/* Collapsible thought trail */}
+                      {msg.thoughts && msg.thoughts.length > 0 && (
+                        <div className="mt-2">
+                          <button
+                            onClick={() =>
+                              setExpandedIds((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(msg.id)) next.delete(msg.id);
+                                else next.add(msg.id);
+                                return next;
+                              })
+                            }
+                            className="flex items-center gap-1.5 text-[10px] cursor-pointer transition-all duration-200"
+                            style={{
+                              color: "var(--color-gideon-muted)",
+                              opacity: 0.6,
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.6"; }}
+                          >
+                            <svg
+                              width="10"
+                              height="10"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              style={{
+                                transform: expandedIds.has(msg.id) ? "rotate(90deg)" : "rotate(0deg)",
+                                transition: "transform 0.2s ease",
+                              }}
+                            >
+                              <path d="M9 18l6-6-6-6" />
+                            </svg>
+                            {expandedIds.has(msg.id) ? "Hide" : "Show"} reasoning ({msg.thoughts.length} steps)
+                          </button>
+
+                          {expandedIds.has(msg.id) && (
+                            <div
+                              className="mt-2 space-y-0.5 pl-2"
+                              style={{
+                                borderLeft: "1px solid rgba(255,255,255,0.06)",
+                              }}
+                            >
+                              {msg.thoughts.map((t) => {
+                                const { from, to } = parseAgent(t.agent);
+                                const isInterAgent = !!to;
+                                const isNarrator = from === "Narrator";
+
+                                if (isNarrator) {
+                                  return (
+                                    <div key={`t-${t.id}`} className="flex gap-2 py-0.5 pl-2">
+                                      <div className="min-w-0">
+                                        <span
+                                          className="text-[9px] uppercase tracking-[0.15em] font-bold"
+                                          style={{
+                                            fontFamily: "var(--font-display)",
+                                            color: "var(--color-gideon-green)",
+                                            opacity: 0.4,
+                                          }}
+                                        >
+                                          Narrator
+                                        </span>
+                                        <p
+                                          className="text-[11px] leading-relaxed mt-0.5"
+                                          style={{ color: "rgba(255,255,255,0.45)" }}
+                                        >
+                                          {t.message}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <div key={`t-${t.id}`} className="flex items-start gap-2 py-0.5 pl-2">
+                                    <div
+                                      className="w-1 h-1 rounded-full mt-1.5 flex-none"
+                                      style={{
+                                        background: isInterAgent
+                                          ? "var(--color-gideon-gold)"
+                                          : "var(--color-gideon-cyan)",
+                                        opacity: 0.3,
+                                      }}
+                                    />
+                                    <div className="min-w-0">
+                                      {isInterAgent ? (
+                                        <span
+                                          className="text-[10px] leading-snug"
+                                          style={{ color: "rgba(255,190,11,0.25)" }}
+                                        >
+                                          <span className="font-bold">{from}</span>
+                                          <span style={{ opacity: 0.4 }}>{" → "}</span>
+                                          <span className="font-bold">{to}</span>
+                                          <span style={{ opacity: 0.4 }}> {t.message}</span>
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] leading-snug">
+                                          <span
+                                            className="font-bold"
+                                            style={{ color: "var(--color-gideon-cyan)", opacity: 0.35 }}
+                                          >
+                                            [{from}]
+                                          </span>{" "}
+                                          <span style={{ color: "var(--color-gideon-muted)", opacity: 0.5 }}>
+                                            {t.message}
+                                          </span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

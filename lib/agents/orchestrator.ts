@@ -66,7 +66,7 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
   }
 
   // 2. Stop/cancel commands — set abort flag
-  if (/^(stop|cancel|wait|never\s*mind|halt|pause)$/i.test(lower)) {
+  if (/\b(stop|cancel|wait|never\s*mind|halt|pause)\b/i.test(lower)) {
     devLog.info("orchestrator", `Stop command detected: "${instruction}"`);
     requestAbort();
     sendThought("Narrator", "Okay, stopping what I was doing.");
@@ -74,7 +74,7 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
   }
 
   // 3. Go back command — navigate browser back
-  if (/^(go\s*back|back|undo|previous(\s*page)?)$/i.test(lower)) {
+  if (/\b(go\s*back|back|undo|previous(\s*page)?)\b/i.test(lower)) {
     devLog.info("orchestrator", `Go back command detected`);
     sendThought("Narrator", "Going back to the previous page...");
     try {
@@ -96,8 +96,6 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
 
   // Normal request — clear any previous abort flag
   clearAbort();
-
-  sendThought("Narrator", `On it — let me help you with that.`);
 
   const userContext = getFullContext(sendThought);
   devLog.debug("orchestrator", "User context loaded", { context: userContext });

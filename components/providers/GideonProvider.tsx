@@ -81,8 +81,11 @@ export function GideonProvider({ children }: { children: React.ReactNode }) {
     return () => eventSource.close();
   }, [addThought]);
 
-  // Poll screenshots
+  // Poll screenshots — ignore stale screenshots from before this session
   useEffect(() => {
+    let lastSeenTimestamp = 0;
+    let initialized = false;
+
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/screenshot?t=${Date.now()}`, {
@@ -90,11 +93,20 @@ export function GideonProvider({ children }: { children: React.ReactNode }) {
         });
         if (res.ok) {
           const data = await res.json();
-          if (data.screenshot) {
-            setLatestScreenshot(data.screenshot);
+          const ts = data.timestamp ?? 0;
+
+          if (!initialized) {
+            // First successful response: record whatever is cached as stale
+            lastSeenTimestamp = ts;
+            initialized = true;
+            return;
           }
-          if (data.boundingBoxes) {
-            setBoundingBoxes(data.boundingBoxes);
+
+          // Only show screenshots that are newer than what was cached at mount
+          if (data.screenshot && ts > lastSeenTimestamp) {
+            setLatestScreenshot(data.screenshot);
+            setBoundingBoxes(data.boundingBoxes ?? []);
+            lastSeenTimestamp = ts;
           }
         }
       } catch {
