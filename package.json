@@ -1,0 +1,35 @@
+{
+  "name": "gideon",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^3.0.29",
+    "@browserbasehq/stagehand": "^3.0.8",
+    "@elevenlabs/react": "^0.14.0",
+    "@playwright/test": "^1.58.2",
+    "@react-three/fiber": "^8.17.0",
+    "ai": "^6.0.86",
+    "dotenv": "^17.3.1",
+    "framer-motion": "^11.15.0",
+    "next": "15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.171.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.171.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}
