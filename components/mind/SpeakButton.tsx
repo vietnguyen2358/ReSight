@@ -26,10 +26,10 @@ export default function SpeakButton() {
         flex items-center gap-3 select-none
         ${
           isListening
-            ? "text-gideon-green"
+            ? "text-resite-green"
             : isThinking
-              ? "text-gideon-gold"
-              : "text-gideon-yellow"
+              ? "text-resite-gold"
+              : "text-resite-yellow"
         }
       `}
       style={{
@@ -59,7 +59,7 @@ export default function SpeakButton() {
             {[0, 1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="w-[2px] rounded-full bg-gideon-green"
+                className="w-[2px] rounded-full bg-resite-green"
                 style={{
                   height: "100%",
                   animation: `waveform-${(i % 3) + 1} ${0.5 + i * 0.08}s ease-in-out ${i * 0.05}s infinite`,
@@ -73,9 +73,9 @@ export default function SpeakButton() {
         {/* Thinking spinner */}
         {isThinking && (
           <div
-            className="w-4 h-4 rounded-full border border-gideon-gold/40"
+            className="w-4 h-4 rounded-full border border-resite-gold/40"
             style={{
-              borderTopColor: "var(--color-gideon-gold)",
+              borderTopColor: "var(--color-resite-gold)",
               animation: "orbit-spin 1s linear infinite",
             }}
           />

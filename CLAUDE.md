@@ -1,7 +1,7 @@
-# CLAUDE.md — Gideon Codebase Guide
+# CLAUDE.md — ReSite Codebase Guide
 
 ## Project Overview
-Gideon is a voice-controlled web browser for the visually impaired, built for TreeHacks 2026. Next.js 15 App Router app with a "Split Brain" architecture: voice-first UI (left pane) + headless browser live feed (right pane), orchestrated by a Council of AI Agents.
+ReSite is a voice-controlled web browser for the visually impaired, built for TreeHacks 2026. Next.js 15 App Router app with a "Split Brain" architecture: voice-first UI (left pane) + headless browser live feed (right pane), orchestrated by a Council of AI Agents.
 
 ## Tech Stack
 - **Framework:** Next.js 15 (App Router) + React 19
@@ -37,7 +37,7 @@ BROWSERBASE_PROJECT_ID=          # Required for BROWSERBASE mode
 ### File Structure
 ```
 app/
-  layout.tsx              # Root layout, wraps children in GideonProvider
+  layout.tsx              # Root layout, wraps children in provider context
   page.tsx                # Renders SplitLayout (dynamically imported, no SSR)
   globals.css             # Tailwind 4 @import + @theme (black/yellow palette)
   api/
@@ -113,7 +113,7 @@ User Voice/Text → POST /api/orchestrator
   → Screenshots cached in memory → polled via /api/screenshot → LiveFeed UI
 ```
 
-### GideonProvider State
+### Provider State
 - `status`: "idle" | "listening" | "thinking" | "speaking" — drives sphere color/speed
 - `thoughts`: array of {id, agent, message, timestamp} — rendered in ChatPanel
 - `latestScreenshot`: base64 JPEG string — rendered in LiveFeed
@@ -155,5 +155,5 @@ User Voice/Text → POST /api/orchestrator
 
 ### Tailwind 4
 - Uses `@tailwindcss/postcss` plugin in postcss.config.mjs (no tailwind.config.js)
-- Custom colors defined via `@theme` block in globals.css (e.g., `--color-gideon-yellow: #ccff00`)
-- Used as classes: `bg-gideon-black`, `text-gideon-yellow`, `border-gideon-green`, etc.
+- Custom colors defined via `@theme` block in globals.css (e.g., `--color-resite-yellow: #ccff00`)
+- Used as classes: `bg-resite-black`, `text-resite-yellow`, `border-resite-green`, etc.

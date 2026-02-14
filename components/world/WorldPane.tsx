@@ -8,7 +8,7 @@ export default function WorldPane() {
   const isActive = status === "thinking" || status === "listening";
 
   return (
-    <div className="flex flex-col h-full bg-gideon-dark relative">
+    <div className="flex flex-col h-full bg-resite-dark relative">
       {/* Header */}
       <div className="flex-none relative">
         <div className="px-5 py-3.5 flex items-center justify-between gap-3">
@@ -22,12 +22,12 @@ export default function WorldPane() {
                   style={{
                     height: `${8 + i * 4}px`,
                     background: isActive
-                      ? "var(--color-gideon-green)"
+                      ? "var(--color-resite-green)"
                       : i === 0
-                        ? "var(--color-gideon-green)"
+                        ? "var(--color-resite-green)"
                         : "rgba(255,255,255,0.08)",
                     opacity: isActive ? 0.8 : i === 0 ? 0.5 : 0.3,
-                    boxShadow: isActive ? `0 0 4px var(--color-gideon-green)` : "none",
+                    boxShadow: isActive ? `0 0 4px var(--color-resite-green)` : "none",
                   }}
                 />
               ))}
@@ -36,7 +36,7 @@ export default function WorldPane() {
               className="text-xs uppercase tracking-[0.2em]"
               style={{
                 fontFamily: "var(--font-display)",
-                color: isActive ? "var(--color-gideon-green)" : "var(--color-gideon-muted)",
+                color: isActive ? "var(--color-resite-green)" : "var(--color-resite-muted)",
                 transition: "color 0.3s ease",
               }}
             >
@@ -49,16 +49,16 @@ export default function WorldPane() {
               <div
                 className="w-1 h-1 rounded-full"
                 style={{
-                  background: "var(--color-gideon-cyan)",
+                  background: "var(--color-resite-cyan)",
                   animation: "dot-breathe 1.5s ease-in-out infinite",
-                  boxShadow: "0 0 4px var(--color-gideon-cyan)",
+                  boxShadow: "0 0 4px var(--color-resite-cyan)",
                 }}
               />
               <span
                 className="text-[10px] uppercase tracking-[0.15em]"
                 style={{
                   fontFamily: "var(--font-display)",
-                  color: "var(--color-gideon-cyan)",
+                  color: "var(--color-resite-cyan)",
                   opacity: 0.7,
                 }}
               >
@@ -97,7 +97,7 @@ export default function WorldPane() {
             <div
               className="w-1 h-1 rounded-full"
               style={{
-                background: isActive ? "var(--color-gideon-green)" : "var(--color-gideon-muted)",
+                background: isActive ? "var(--color-resite-green)" : "var(--color-resite-muted)",
                 animation: isActive ? "dot-breathe 2s ease-in-out infinite" : "none",
               }}
             />
@@ -105,7 +105,7 @@ export default function WorldPane() {
               className="text-[10px] tracking-wide"
               style={{
                 fontFamily: "var(--font-display)",
-                color: "var(--color-gideon-muted)",
+                color: "var(--color-resite-muted)",
                 opacity: 0.6,
               }}
             >
@@ -116,7 +116,7 @@ export default function WorldPane() {
             className="text-[10px] tracking-wide"
             style={{
               fontFamily: "var(--font-display)",
-              color: "var(--color-gideon-muted)",
+              color: "var(--color-resite-muted)",
               opacity: 0.4,
             }}
           >

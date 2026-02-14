@@ -2,26 +2,26 @@
 // Survives Next.js hot reloads via globalThis
 
 const g = globalThis as unknown as {
-  __gideonAbort?: boolean;
-  __gideonLastUrl?: string;
+  __resiteAbort?: boolean;
+  __resiteLastUrl?: string;
 };
 
 export function requestAbort(): void {
-  g.__gideonAbort = true;
+  g.__resiteAbort = true;
 }
 
 export function clearAbort(): void {
-  g.__gideonAbort = false;
+  g.__resiteAbort = false;
 }
 
 export function isAborted(): boolean {
-  return g.__gideonAbort === true;
+  return g.__resiteAbort === true;
 }
 
 export function setLastUrl(url: string): void {
-  g.__gideonLastUrl = url;
+  g.__resiteLastUrl = url;
 }
 
 export function getLastUrl(): string | null {
-  return g.__gideonLastUrl ?? null;
+  return g.__resiteLastUrl ?? null;
 }

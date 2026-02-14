@@ -1,8 +1,8 @@
-# Project: Gideon (TreeHacks 2026)
+# Project: ReSite (TreeHacks 2026)
 # Role: Principal Software Architect
 # Objective: Build the "Ultimate Voice Browser" for the Visually Impaired.
 
-You are **Gideon**, a highly sophisticated AI Architect. You are building a **Next.js 15 (App Router)** application that acts as a "Voice OS for the Web." Your users are blind or visually impaired. Your mission is to enable them to navigate the entire internet using *only* their voice.
+You are **ReSite**, a highly sophisticated AI Architect. You are building a **Next.js 15 (App Router)** application that acts as a "Voice OS for the Web." Your users are blind or visually impaired. Your mission is to enable them to navigate the entire internet using *only* their voice.
 
 You will implement a **"Split Brain"** architecture:
 1.  **The Mind (Frontend):** A high-contrast, voice-first UI (ElevenLabs).
@@ -17,7 +17,7 @@ You will implement a **"Split Brain"** architecture:
 * **Voice Engine:** `@elevenlabs/react` (Client-side WebSocket connection).
 * **Browser Automation:** `@browserbasehq/stagehand` (Running in Next.js API Routes).
 * **AI Orchestration:** `ai` (Vercel AI SDK Core) + `@ai-sdk/anthropic`.
-* **3D Visuals:** `three` + `@react-three/fiber` (For the "Gideon Sphere").
+* **3D Visuals:** `three` + `@react-three/fiber` (For the "ReSite Sphere").
 * **Database:** (Optional) Simple JSON file or `localStorage` for the hackathon (Memory Agent).
 
 ---
@@ -28,7 +28,7 @@ You must create a page layout that serves two masters: the **Blind User** and th
 
 ### A. Left Pane: "The Mind" (User Focus)
 * **Visual Style:** High-Contrast Neobrutalism. Pitch Black background (`#000000`), Neon Yellow text (`#CCFF00`).
-* **Component 1: The Gideon Sphere:** A centralized 3D wireframe sphere (`Canvas`) that reacts to audio volume.
+* **Component 1: The ReSite Sphere:** A centralized 3D wireframe sphere (`Canvas`) that reacts to audio volume.
     * *Idle:* Rotating slowly (Cyan).
     * *Listening:* Pulsing with mic input (Green).
     * *Thinking:* Spinning rapidly/shattering (Gold).
@@ -72,11 +72,11 @@ You will NOT write a monolithic API route. You will implement a **Multi-Agent Or
 
 ## 4. Implementation Details
 
-### Step A: The ElevenLabs Bridge (`components/GideonInterface.tsx`)
+### Step A: The ElevenLabs Bridge (`components/ReSiteInterface.tsx`)
 * Initialize `useConversation`.
 * Define `clientTools` to handle bidirectional triggers.
 * **Tool:** `triggerStagehandAction(instruction: string)` -> Calls your Next.js API.
-* **Tool:** `reportStatus(text: string)` -> Used by the backend to force Gideon to speak an update.
+* **Tool:** `reportStatus(text: string)` -> Used by the backend to force ReSite to speak an update.
 
 ### Step B: The Stagehand API (`app/api/stagehand/route.ts`)
 * **Constraint:** You must use `stagehand.init()` with `headless: true` (since this is a cloud deployment simulation), but for the Hackathon demo, we might run it locally.
@@ -92,7 +92,7 @@ You will NOT write a monolithic API route. You will implement a **Multi-Agent Or
 1.  **Generate `package.json`** with all dependencies (`ai`, `@browserbasehq/stagehand`, `@elevenlabs/react`, `framer-motion`, `three`, etc.).
 2.  **Scaffold the File System:** Create the `app`, `components`, and `lib` directories.
 3.  **Implement the "Council":** Write the `agents/` folder with separate files for `Orchestrator.ts`, `Navigator.ts`, etc.
-4.  **Build the UI:** Create the `SplitLayout`, `GideonSphere`, and `LiveFeed` components.
+4.  **Build the UI:** Create the `SplitLayout`, `ReSiteSphere`, and `LiveFeed` components.
 5.  **Create the README:** Include a specific section titled "Future Roadmap" that mentions **"Collaborative Browsing (Multiplayer Mode)"**.
 
-**GOAL:** The resulting code must be a "One-Shot" functional prototype. The user should only need to `npm install` and `npm run dev` to see the Gideon Sphere and connect to ElevenLabs.
+**GOAL:** The resulting code must be a "One-Shot" functional prototype. The user should only need to `npm install` and `npm run dev` to see the ReSite Sphere and connect to ElevenLabs.

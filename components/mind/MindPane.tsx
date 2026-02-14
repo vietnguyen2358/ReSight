@@ -13,26 +13,26 @@ const hasElevenLabs = !!process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
 const STATUS_CONFIG: Record<string, { label: string; color: string; dotClass: string; sparkleColor: string }> = {
   idle: {
     label: "Standing By",
-    color: "var(--color-gideon-cyan)",
-    dotClass: "bg-gideon-cyan",
+    color: "var(--color-resite-cyan)",
+    dotClass: "bg-resite-cyan",
     sparkleColor: "#00e5ff",
   },
   listening: {
     label: "Listening",
-    color: "var(--color-gideon-green)",
-    dotClass: "bg-gideon-green",
+    color: "var(--color-resite-green)",
+    dotClass: "bg-resite-green",
     sparkleColor: "#00ff6a",
   },
   thinking: {
     label: "Processing",
-    color: "var(--color-gideon-gold)",
-    dotClass: "bg-gideon-gold",
+    color: "var(--color-resite-gold)",
+    dotClass: "bg-resite-gold",
     sparkleColor: "#ffbe0b",
   },
   speaking: {
     label: "Speaking",
-    color: "var(--color-gideon-yellow)",
-    dotClass: "bg-gideon-yellow",
+    color: "var(--color-resite-yellow)",
+    dotClass: "bg-resite-yellow",
     sparkleColor: "#d4ff00",
   },
 };
@@ -50,7 +50,7 @@ export default function MindPane() {
   const isActive = status === "thinking" || status === "listening";
 
   return (
-    <div className="flex flex-col h-full bg-gideon-black relative overflow-hidden">
+    <div className="flex flex-col h-full bg-resite-black relative overflow-hidden">
       {hasElevenLabs && <VoiceManager />}
 
       {/* Aceternity background beams */}
@@ -124,7 +124,7 @@ export default function MindPane() {
                 className="text-[15px] font-bold tracking-[0.35em] uppercase"
                 style={{
                   fontFamily: "var(--font-display)",
-                  background: "linear-gradient(90deg, var(--color-gideon-yellow) 0%, var(--color-gideon-cyan) 100%)",
+                  background: "linear-gradient(90deg, var(--color-resite-yellow) 0%, var(--color-resite-cyan) 100%)",
                   backgroundClip: "text",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -132,13 +132,13 @@ export default function MindPane() {
                   animation: "text-shimmer 6s ease-in-out infinite",
                 }}
               >
-                Gideon
+                ReSite
               </h1>
               <span
                 className="text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 rounded-md"
                 style={{
                   fontFamily: "var(--font-display)",
-                  color: "var(--color-gideon-muted)",
+                  color: "var(--color-resite-muted)",
                   background: "rgba(255,255,255,0.02)",
                   border: "1px solid rgba(255,255,255,0.05)",
                 }}
@@ -159,7 +159,7 @@ export default function MindPane() {
                 className="text-[10px] uppercase tracking-[0.2em]"
                 style={{
                   fontFamily: "var(--font-display)",
-                  color: isActive ? config.color : "var(--color-gideon-muted)",
+                  color: isActive ? config.color : "var(--color-resite-muted)",
                   transition: "color 0.3s ease",
                 }}
               >
@@ -187,8 +187,8 @@ export default function MindPane() {
                         : "rgba(255,255,255,0.04)"
                     }`,
                     color: isAgentActive
-                      ? "var(--color-gideon-cyan)"
-                      : "var(--color-gideon-muted)",
+                      ? "var(--color-resite-cyan)"
+                      : "var(--color-resite-muted)",
                     boxShadow: isAgentActive
                       ? "0 0 10px rgba(0,229,255,0.08)"
                       : "none",

@@ -269,7 +269,7 @@ export default function ChatPanel() {
                   width: "6px",
                   height: "6px",
                   transform: "translate(-50%, -50%)",
-                  background: "var(--color-gideon-cyan)",
+                  background: "var(--color-resite-cyan)",
                   boxShadow: "0 0 12px rgba(0,229,255,0.4)",
                 }}
               />
@@ -280,11 +280,11 @@ export default function ChatPanel() {
                   width: "3px",
                   height: "3px",
                   borderRadius: "50%",
-                  background: "var(--color-gideon-yellow)",
+                  background: "var(--color-resite-yellow)",
                   top: "0",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  boxShadow: "0 0 6px var(--color-gideon-yellow)",
+                  boxShadow: "0 0 6px var(--color-resite-yellow)",
                   animation: "orbit-spin 6s linear infinite",
                   transformOrigin: "0 40px",
                 }}
@@ -296,15 +296,15 @@ export default function ChatPanel() {
                 className="text-xs font-semibold uppercase tracking-[0.3em] mb-2"
                 style={{
                   fontFamily: "var(--font-display)",
-                  color: "var(--color-gideon-cyan)",
+                  color: "var(--color-resite-cyan)",
                   textShadow: "0 0 15px rgba(0,229,255,0.2)",
                 }}
               >
-                Gideon Ready
+                ReSite Ready
               </p>
               <p
                 className="text-[11px] leading-relaxed max-w-[260px] mb-5"
-                style={{ color: "var(--color-gideon-muted)" }}
+                style={{ color: "var(--color-resite-muted)" }}
               >
                 Voice-controlled browser navigation. Try a command below.
               </p>
@@ -326,7 +326,7 @@ export default function ChatPanel() {
                   style={{
                     background: "rgba(255,255,255,0.015)",
                     border: "1px solid rgba(255,255,255,0.04)",
-                    color: "var(--color-gideon-muted)",
+                    color: "var(--color-resite-muted)",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "rgba(0,229,255,0.04)";
@@ -336,10 +336,10 @@ export default function ChatPanel() {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "rgba(255,255,255,0.015)";
                     e.currentTarget.style.borderColor = "rgba(255,255,255,0.04)";
-                    e.currentTarget.style.color = "var(--color-gideon-muted)";
+                    e.currentTarget.style.color = "var(--color-resite-muted)";
                   }}
                 >
-                  <span style={{ color: "var(--color-gideon-cyan)", opacity: 0.5, marginRight: "8px" }}>
+                  <span style={{ color: "var(--color-resite-cyan)", opacity: 0.5, marginRight: "8px" }}>
                     &rarr;
                   </span>
                   {suggestion}
@@ -365,7 +365,7 @@ export default function ChatPanel() {
                   style={{
                     background: "rgba(212,255,0,0.06)",
                     border: "1px solid rgba(212,255,0,0.12)",
-                    color: "var(--color-gideon-yellow)",
+                    color: "var(--color-resite-yellow)",
                     backdropFilter: "blur(8px)",
                   }}
                 >
@@ -378,7 +378,7 @@ export default function ChatPanel() {
                     <div
                       className="w-[2px] flex-none rounded-full mt-1"
                       style={{
-                        background: "linear-gradient(180deg, var(--color-gideon-green), transparent)",
+                        background: "linear-gradient(180deg, var(--color-resite-green), transparent)",
                         opacity: 0.4,
                       }}
                     />
@@ -387,11 +387,11 @@ export default function ChatPanel() {
                         className="text-[9px] uppercase tracking-[0.2em] font-bold"
                         style={{
                           fontFamily: "var(--font-display)",
-                          color: "var(--color-gideon-green)",
+                          color: "var(--color-resite-green)",
                           opacity: 0.5,
                         }}
                       >
-                        Gideon
+                        ReSite
                       </span>
                       <p
                         className="text-[13px] leading-relaxed mt-1"
@@ -414,7 +414,7 @@ export default function ChatPanel() {
                             }
                             className="flex items-center gap-1.5 text-[10px] cursor-pointer transition-all duration-200"
                             style={{
-                              color: "var(--color-gideon-muted)",
+                              color: "var(--color-resite-muted)",
                               opacity: 0.6,
                             }}
                             onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
@@ -460,7 +460,7 @@ export default function ChatPanel() {
                                             className="text-[9px] uppercase tracking-[0.15em] font-bold"
                                             style={{
                                               fontFamily: "var(--font-display)",
-                                              color: isAnswer ? "var(--color-gideon-yellow)" : "var(--color-gideon-green)",
+                                              color: isAnswer ? "var(--color-resite-yellow)" : "var(--color-resite-green)",
                                               opacity: isAnswer ? 0.7 : 0.4,
                                             }}
                                           >
@@ -470,7 +470,7 @@ export default function ChatPanel() {
                                             className="text-[7px] uppercase tracking-[0.1em] px-1 py-px rounded"
                                             style={{
                                               fontFamily: "var(--font-display)",
-                                              color: isAnswer ? "var(--color-gideon-yellow)" : "var(--color-gideon-muted)",
+                                              color: isAnswer ? "var(--color-resite-yellow)" : "var(--color-resite-muted)",
                                               background: isAnswer ? "rgba(212,255,0,0.08)" : "rgba(255,255,255,0.03)",
                                               opacity: isAnswer ? 0.8 : 0.4,
                                             }}
@@ -495,8 +495,8 @@ export default function ChatPanel() {
                                       className="w-1 h-1 rounded-full mt-1.5 flex-none"
                                       style={{
                                         background: isInterAgent
-                                          ? "var(--color-gideon-gold)"
-                                          : "var(--color-gideon-cyan)",
+                                          ? "var(--color-resite-gold)"
+                                          : "var(--color-resite-cyan)",
                                         opacity: 0.3,
                                       }}
                                     />
@@ -515,11 +515,11 @@ export default function ChatPanel() {
                                         <span className="text-[10px] leading-snug">
                                           <span
                                             className="font-bold"
-                                            style={{ color: "var(--color-gideon-cyan)", opacity: 0.35 }}
+                                            style={{ color: "var(--color-resite-cyan)", opacity: 0.35 }}
                                           >
                                             [{from}]
                                           </span>{" "}
-                                          <span style={{ color: "var(--color-gideon-muted)", opacity: 0.5 }}>
+                                          <span style={{ color: "var(--color-resite-muted)", opacity: 0.5 }}>
                                             {t.message}
                                           </span>
                                         </span>
@@ -563,8 +563,8 @@ export default function ChatPanel() {
                         className="w-[2px] flex-none rounded-full mt-0.5"
                         style={{
                           background: isAnswer
-                            ? "linear-gradient(180deg, var(--color-gideon-yellow), transparent)"
-                            : "linear-gradient(180deg, var(--color-gideon-green), transparent)",
+                            ? "linear-gradient(180deg, var(--color-resite-yellow), transparent)"
+                            : "linear-gradient(180deg, var(--color-resite-green), transparent)",
                           opacity: isAnswer ? 0.9 : 0.6,
                         }}
                       />
@@ -574,7 +574,7 @@ export default function ChatPanel() {
                             className="text-[9px] uppercase tracking-[0.2em] font-bold"
                             style={{
                               fontFamily: "var(--font-display)",
-                              color: isAnswer ? "var(--color-gideon-yellow)" : "var(--color-gideon-green)",
+                              color: isAnswer ? "var(--color-resite-yellow)" : "var(--color-resite-green)",
                               opacity: isAnswer ? 0.9 : 0.6,
                             }}
                           >
@@ -584,7 +584,7 @@ export default function ChatPanel() {
                             className="text-[8px] uppercase tracking-[0.15em] px-1.5 py-0.5 rounded"
                             style={{
                               fontFamily: "var(--font-display)",
-                              color: isAnswer ? "var(--color-gideon-yellow)" : "var(--color-gideon-muted)",
+                              color: isAnswer ? "var(--color-resite-yellow)" : "var(--color-resite-muted)",
                               background: isAnswer ? "rgba(212,255,0,0.1)" : "rgba(255,255,255,0.04)",
                               border: `1px solid ${isAnswer ? "rgba(212,255,0,0.2)" : "rgba(255,255,255,0.06)"}`,
                               opacity: isAnswer ? 1 : 0.5,
@@ -616,9 +616,9 @@ export default function ChatPanel() {
                       className="w-1 h-1 rounded-full mt-1.5 flex-none"
                       style={{
                         background: isInterAgent
-                          ? "var(--color-gideon-gold)"
-                          : "var(--color-gideon-cyan)",
-                        boxShadow: `0 0 4px ${isInterAgent ? "var(--color-gideon-gold)" : "var(--color-gideon-cyan)"}`,
+                          ? "var(--color-resite-gold)"
+                          : "var(--color-resite-cyan)",
+                        boxShadow: `0 0 4px ${isInterAgent ? "var(--color-resite-gold)" : "var(--color-resite-cyan)"}`,
                       }}
                     />
                     <div className="min-w-0">
@@ -636,11 +636,11 @@ export default function ChatPanel() {
                         <span className="text-[10px] leading-snug">
                           <span
                             className="font-bold"
-                            style={{ color: "var(--color-gideon-cyan)", opacity: 0.6 }}
+                            style={{ color: "var(--color-resite-cyan)", opacity: 0.6 }}
                           >
                             [{from}]
                           </span>{" "}
-                          <span style={{ color: "var(--color-gideon-muted)" }}>
+                          <span style={{ color: "var(--color-resite-muted)" }}>
                             {t.message}
                           </span>
                         </span>
@@ -680,7 +680,7 @@ export default function ChatPanel() {
                         style={{
                           background: "rgba(0,229,255,0.06)",
                           border: "1px solid rgba(0,229,255,0.2)",
-                          color: "var(--color-gideon-cyan)",
+                          color: "var(--color-resite-cyan)",
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = "rgba(0,229,255,0.12)";
@@ -713,7 +713,7 @@ export default function ChatPanel() {
                       className="w-[2px] rounded-full"
                       style={{
                         height: "100%",
-                        background: "var(--color-gideon-gold)",
+                        background: "var(--color-resite-gold)",
                         animation: `waveform-${(i % 3) + 1} ${0.6 + i * 0.1}s ease-in-out ${i * 0.08}s infinite`,
                         opacity: 0.6,
                       }}
@@ -724,7 +724,7 @@ export default function ChatPanel() {
                   className="text-[10px] uppercase tracking-[0.15em]"
                   style={{
                     fontFamily: "var(--font-display)",
-                    color: "var(--color-gideon-gold)",
+                    color: "var(--color-resite-gold)",
                     opacity: 0.5,
                   }}
                 >
@@ -781,7 +781,7 @@ export default function ChatPanel() {
                 ? "Type your answer..."
                 : loading
                   ? "Type 'stop' to cancel..."
-                  : "Message Gideon..."
+                  : "Message ReSite..."
             }
             rows={2}
             className="w-full bg-transparent text-sm leading-relaxed px-4 pt-3.5 pb-2
@@ -789,7 +789,7 @@ export default function ChatPanel() {
                        placeholder:text-white/15"
             style={{
               color: "rgba(255,255,255,0.9)",
-              caretColor: "var(--color-gideon-cyan)",
+              caretColor: "var(--color-resite-cyan)",
               wordWrap: "break-word",
               overflowWrap: "break-word",
               maxHeight: "120px",
@@ -807,7 +807,7 @@ export default function ChatPanel() {
               className="text-[10px] tracking-wide"
               style={{
                 fontFamily: "var(--font-display)",
-                color: "var(--color-gideon-muted)",
+                color: "var(--color-resite-muted)",
                 opacity: 0.5,
               }}
             >
@@ -816,7 +816,7 @@ export default function ChatPanel() {
                   <span
                     className="inline-block w-1.5 h-1.5 rounded-full"
                     style={{
-                      background: "var(--color-gideon-gold)",
+                      background: "var(--color-resite-gold)",
                       animation: "dot-breathe 1.5s ease-in-out infinite",
                     }}
                   />
@@ -838,8 +838,8 @@ export default function ChatPanel() {
                   ? "rgba(212,255,0,0.1)"
                   : "transparent",
                 color: input.trim()
-                  ? "var(--color-gideon-yellow)"
-                  : "var(--color-gideon-muted)",
+                  ? "var(--color-resite-yellow)"
+                  : "var(--color-resite-muted)",
                 opacity: input.trim() ? 1 : 0.25,
               }}
             >

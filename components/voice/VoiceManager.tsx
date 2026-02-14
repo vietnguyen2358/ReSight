@@ -121,7 +121,7 @@ export default function VoiceManager() {
         return;
       }
       if (parsed?.role === "agent" || typeof message === "string") {
-        addThought("Gideon", rendered);
+        addThought("ReSite", rendered);
       }
     },
     onError: (error) => {

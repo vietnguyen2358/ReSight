@@ -30,7 +30,7 @@ function getModel() {
   throw new Error("No LLM API key configured.");
 }
 
-const NAVIGATOR_SYSTEM = `You are the Navigator for Gideon, a voice-controlled web browser for BLIND users. You are their eyes — browsing the web on their behalf, narrating everything clearly so they always know what's happening. Think of yourself as a knowledgeable friend sitting next to them.
+const NAVIGATOR_SYSTEM = `You are the Navigator for ReSite, a voice-controlled web browser for BLIND users. You are their eyes — browsing the web on their behalf, narrating everything clearly so they always know what's happening. Think of yourself as a knowledgeable friend sitting next to them.
 
 ## Your Personality
 - Speak naturally and conversationally: "Alright, let me look that up for you..." not "Executing search query"
@@ -49,12 +49,20 @@ const NAVIGATOR_SYSTEM = `You are the Navigator for Gideon, a voice-controlled w
 6. **done** — Signal task completion with a conversational summary
 
 ## NARRATION RULES (CRITICAL — YOU MUST FOLLOW THESE)
-After every goto_url and after any do_action that changes the page, you MUST call narrate. Focus on:
-- What's RELEVANT to the user's task: options available, prices, key info they need to make a decision
-- Any problems: "There's a cookie popup in the way, let me dismiss that..."
-- Actionable context: what the user can do next — "They have milk teas, fruit teas, and matcha. What sounds good?"
-- Keep it natural and task-focused: 2-4 sentences max
-- Do NOT describe page layout, UI elements, or navigation structure. The user can't see the screen and doesn't care about buttons or menus — they care about the CONTENT and their OPTIONS.
+After every goto_url and after any do_action that changes the page, you MUST call narrate.
+
+Use ADAPTIVE DETAIL:
+- **Simple state** (single clear answer, basic confirmation): 2-3 sentences
+- **Complex state** (many options/results, tradeoffs, forms, multiple prices): 4-6 sentences
+
+Structure every narration in this order:
+1. **Context**: where we are or what changed
+2. **Key facts**: names, prices, ratings, counts, availability, notable constraints
+3. **Minimal orientation hint** ONLY when action-relevant (for example, where search results or filters are)
+4. **Actionable next step**: offer 2-3 concrete options so the user stays in control
+
+Keep it natural, spoken, and specific. Prefer concrete facts over generic summaries.
+Do NOT describe decorative UI chrome (sign-up prompts, cart icons, generic nav) unless directly relevant to the task.
 
 ## ANSWERING STRATEGY (CRITICAL — READ THIS CAREFULLY)
 Your goal is to answer the user's question QUICKLY and CONVERSATIONALLY. Do NOT be exhaustive.
@@ -189,6 +197,60 @@ async function getPageContext(page: any) {
         }
       });
 
+      // Extract prices
+      const prices: string[] = [];
+      const priceRegex = /(?:[$€£]\s?\d[\d,]*(?:\.\d{1,2})?)|(?:\d[\d,]*(?:\.\d{1,2})?\s?(?:usd|eur|gbp))/gi;
+      document.querySelectorAll("body *").forEach((el, i) => {
+        if (i >= 350) return;
+        const textContent = el.textContent?.trim();
+        if (!textContent || textContent.length > 120) return;
+        const matches = textContent.match(priceRegex);
+        if (!matches) return;
+        for (const match of matches) {
+          if (prices.length >= 12) break;
+          const normalized = match.replace(/\s+/g, " ").trim();
+          if (!prices.includes(normalized)) prices.push(normalized);
+        }
+      });
+
+      // Extract ratings
+      const ratings: string[] = [];
+      const ratingRegex = /(?:\b\d(?:\.\d)?\s*\/\s*5\b)|(?:\b\d(?:\.\d)?\s*stars?\b)|(?:\b\d(?:\.\d)?\s*out of\s*5\b)/gi;
+      document.querySelectorAll("body *").forEach((el, i) => {
+        if (i >= 350 || ratings.length >= 10) return;
+        const textContent = el.textContent?.trim();
+        if (!textContent || textContent.length > 120) return;
+        const matches = textContent.match(ratingRegex);
+        if (!matches) return;
+        for (const match of matches) {
+          if (ratings.length >= 10) break;
+          const normalized = match.replace(/\s+/g, " ").trim();
+          if (!ratings.includes(normalized)) ratings.push(normalized);
+        }
+      });
+
+      // Extract likely result/item names
+      const itemNames: string[] = [];
+      document.querySelectorAll("h1, h2, h3, h4, [role='heading'], article a, li a").forEach((el, i) => {
+        if (i >= 120 || itemNames.length >= 12) return;
+        const textContent = el.textContent?.trim();
+        if (!textContent) return;
+        const cleaned = textContent.replace(/\s+/g, " ").trim();
+        if (cleaned.length < 3 || cleaned.length > 90) return;
+        if (!itemNames.includes(cleaned)) itemNames.push(cleaned);
+      });
+
+      // Extract concise page snippets
+      const snippets: string[] = [];
+      document.querySelectorAll("main p, article p, section p, [role='main'] p").forEach((el, i) => {
+        if (i >= 30 || snippets.length >= 6) return;
+        const textContent = el.textContent?.trim();
+        if (!textContent) return;
+        const cleaned = textContent.replace(/\s+/g, " ").trim();
+        if (cleaned.length < 40) return;
+        snippets.push(cleaned.substring(0, 140));
+      });
+
       // Page signals
       const hasSearchBox = !!document.querySelector("input[type='search'], input[name='q'], input[aria-label*='search' i], input[placeholder*='search' i]");
       const hasLoginForm = !!document.querySelector("input[type='password'], form[action*='login'], form[action*='signin']");
@@ -201,6 +263,20 @@ async function getPageContext(page: any) {
         buttons,
         fields,
         navLinks,
+        prices,
+        ratings,
+        itemNames,
+        snippets,
+        counts: {
+          headings: headings.length,
+          buttons: buttons.length,
+          fields: fields.length,
+          navLinks: navLinks.length,
+          prices: prices.length,
+          ratings: ratings.length,
+          itemNames: itemNames.length,
+          snippets: snippets.length,
+        },
         signals: { hasSearchBox, hasLoginForm, hasCart, hasCookieBanner },
       };
     })
@@ -210,6 +286,20 @@ async function getPageContext(page: any) {
       buttons: [] as string[],
       fields: [] as string[],
       navLinks: [] as string[],
+      prices: [] as string[],
+      ratings: [] as string[],
+      itemNames: [] as string[],
+      snippets: [] as string[],
+      counts: {
+        headings: 0,
+        buttons: 0,
+        fields: 0,
+        navLinks: 0,
+        prices: 0,
+        ratings: 0,
+        itemNames: 0,
+        snippets: 0,
+      },
       signals: { hasSearchBox: false, hasLoginForm: false, hasCart: false, hasCookieBanner: false },
     }));
 
@@ -221,6 +311,11 @@ async function getPageContext(page: any) {
     buttons: structured.buttons,
     formFields: structured.fields,
     navLinks: structured.navLinks,
+    prices: structured.prices,
+    ratings: structured.ratings,
+    itemNames: structured.itemNames,
+    snippets: structured.snippets,
+    counts: structured.counts,
     pageSignals: structured.signals,
   };
 
@@ -370,7 +465,22 @@ export async function navigatorAgent(
       ? `\n\nLEARNED PATTERNS FROM PAST SESSIONS:\n${learnedFlows.map((f) => `- "${f.pattern}": ${f.steps}`).join("\n")}`
       : "";
 
-    const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${learnedContext}\n\nTask: ${instruction}`;
+    const factHints: string[] = [];
+    const startPrices = Array.isArray(startCtx.prices) ? (startCtx.prices as string[]) : [];
+    const startRatings = Array.isArray(startCtx.ratings) ? (startCtx.ratings as string[]) : [];
+    const startItems = Array.isArray(startCtx.itemNames) ? (startCtx.itemNames as string[]) : [];
+    const startSnippets = Array.isArray(startCtx.snippets) ? (startCtx.snippets as string[]) : [];
+
+    if (startPrices.length > 0) factHints.push(`prices: ${startPrices.slice(0, 5).join(", ")}`);
+    if (startRatings.length > 0) factHints.push(`ratings: ${startRatings.slice(0, 3).join(", ")}`);
+    if (startItems.length > 0) factHints.push(`items: ${startItems.slice(0, 5).join(" | ")}`);
+    if (startSnippets.length > 0) factHints.push(`snippets: ${startSnippets.slice(0, 2).join(" || ")}`);
+
+    const factsBlock = factHints.length
+      ? `\nAvailable facts: ${factHints.join(" ; ")}\nUse concrete facts when narrating.`
+      : "";
+
+    const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${factsBlock}${learnedContext}\n\nTask: ${instruction}`;
 
 
     devLog.info("llm", "Navigator generateText call", {
@@ -584,18 +694,24 @@ export async function navigatorAgent(
 
         narrate: tool({
           description:
-            "Describe the current page to the blind user. Call this after every goto_url and after significant do_action changes. Describe the page layout, key elements, and content spatially.",
+            "Describe the current page to the blind user after every page load and significant action. Give a spoken, task-relevant summary with concrete facts, and end with actionable options.",
           inputSchema: z.object({
-            description: z.string().describe("A natural, spatial description of what the page looks like — 2-4 sentences covering layout, key elements, and relevant content"),
+            description: z.string().describe("Natural spoken narration with context, concrete facts (names/prices/ratings/counts), optional minimal orientation if action-relevant, and clear next-step choices"),
+            detailLevel: z
+              .enum(["concise", "normal", "detailed"])
+              .optional()
+              .describe("Adaptive narration level: concise for simple state, detailed for complex pages"),
           }),
-          execute: async ({ description }) => {
+          execute: async ({ description, detailLevel = "normal" }) => {
             if (forceStopReason) return { error: forceStopReason, forceStopped: true };
             stepNumber++;
-            devLog.info("navigator", `[Step ${stepNumber}] narrate: "${description.substring(0, 200)}"`);
+            devLog.info("navigator", `[Step ${stepNumber}] narrate (${detailLevel}): "${description.substring(0, 200)}"`);
 
             // Detect if this narration contains a substantive answer (prices, ratings, summaries)
             const hasSpecificData = /\$\d|★|⭐|\d+\.\d+.star|\d+ star|rating/i.test(description);
-            const isSummaryLike = description.length > 150 && (hasSpecificData || /found|here's|result/i.test(description));
+            const minSummaryLength = detailLevel === "concise" ? 100 : detailLevel === "detailed" ? 180 : 150;
+            const isSummaryLike =
+              description.length > minSummaryLength && (hasSpecificData || /found|here's|result|option|price|rating/i.test(description));
             if (isSummaryLike) {
               substantiveNarrations++;
               // After 2 substantive answers, the model has what it needs — force stop

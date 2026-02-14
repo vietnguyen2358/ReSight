@@ -10,7 +10,7 @@ export default function OverlayBox({ box }: OverlayBoxProps) {
   if (box.width === 0 && box.height === 0) return null;
 
   const cornerSize = Math.min(12, box.width * 0.15, box.height * 0.15);
-  const color = "var(--color-gideon-green)";
+  const color = "var(--color-resite-green)";
 
   return (
     <div
@@ -81,7 +81,7 @@ export default function OverlayBox({ box }: OverlayBoxProps) {
           style={{
             fontFamily: "var(--font-display)",
             background: "rgba(0,255,106,0.15)",
-            color: "var(--color-gideon-green)",
+            color: "var(--color-resite-green)",
             border: "1px solid rgba(0,255,106,0.25)",
             letterSpacing: "0.05em",
             backdropFilter: "blur(4px)",

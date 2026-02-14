@@ -28,7 +28,7 @@ export function DotBackground({
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse at center, transparent 30%, var(--color-gideon-dark) 80%)",
+            "radial-gradient(ellipse at center, transparent 30%, var(--color-resite-dark) 80%)",
         }}
       />
       {children}
@@ -62,7 +62,7 @@ export function GridBackground({
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse at center, transparent 20%, var(--color-gideon-dark) 75%)",
+            "radial-gradient(ellipse at center, transparent 20%, var(--color-resite-dark) 75%)",
         }}
       />
       {children}

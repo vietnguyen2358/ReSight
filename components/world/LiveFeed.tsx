@@ -14,7 +14,7 @@ export default function LiveFeed() {
 
   if (!screenshotSrc) {
     return (
-      <DotBackground className="bg-gideon-dark" dotColor="rgba(80,80,104,0.2)" gap={28}>
+      <DotBackground className="bg-resite-dark" dotColor="rgba(80,80,104,0.2)" gap={28}>
         <div className="flex items-center justify-center h-full relative z-10">
           <div className="text-center">
             {/* Animated empty state */}
@@ -48,7 +48,7 @@ export default function LiveFeed() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1"
-                  style={{ color: "var(--color-gideon-muted)", opacity: 0.5 }}
+                  style={{ color: "var(--color-resite-muted)", opacity: 0.5 }}
                 >
                   <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
                   <line x1="8" y1="21" x2="16" y2="21" />
@@ -62,13 +62,13 @@ export default function LiveFeed() {
                   width: "3px",
                   height: "3px",
                   borderRadius: "50%",
-                  background: "var(--color-gideon-cyan)",
+                  background: "var(--color-resite-cyan)",
                   top: "0",
                   left: "50%",
                   transformOrigin: "0 48px",
                   animation: "orbit-spin 10s linear infinite",
                   opacity: 0.5,
-                  boxShadow: "0 0 6px var(--color-gideon-cyan)",
+                  boxShadow: "0 0 6px var(--color-resite-cyan)",
                 }}
               />
             </div>
@@ -77,7 +77,7 @@ export default function LiveFeed() {
               className="text-xs uppercase tracking-[0.2em] mb-1.5"
               style={{
                 fontFamily: "var(--font-display)",
-                color: "var(--color-gideon-muted)",
+                color: "var(--color-resite-muted)",
                 opacity: 0.7,
               }}
             >
@@ -86,7 +86,7 @@ export default function LiveFeed() {
             <p
               className="text-[10px] tracking-wide"
               style={{
-                color: "var(--color-gideon-muted)",
+                color: "var(--color-resite-muted)",
                 opacity: 0.4,
               }}
             >

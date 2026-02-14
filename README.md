@@ -1,8 +1,8 @@
-# Gideon — Voice Browser for the Visually Impaired
+# ReSite — Voice Browser for the Visually Impaired
 
 > Built for TreeHacks 2026
 
-Gideon is an AI-powered voice browser that enables visually impaired users to navigate the entire internet using only their voice. It features a "Split Brain" architecture: a voice-first UI paired with headless browser automation orchestrated by a Council of AI Agents.
+ReSite is an AI-powered voice browser that enables visually impaired users to navigate the entire internet using only their voice. It features a "Split Brain" architecture: a voice-first UI paired with headless browser automation orchestrated by a Council of AI Agents.
 
 ## Architecture
 
@@ -17,7 +17,7 @@ Parallel streams:
   Screenshots: Browser → memory cache → LiveFeed UI
 ```
 
-**The Mind (Left Pane)** — Unified chat interface with real-time agent thought stream, inter-agent communication logs, and text/voice input. GideonSphere serves as a compact status indicator.
+**The Mind (Left Pane)** — Unified chat interface with real-time agent thought stream, inter-agent communication logs, and text/voice input. The ReSite sphere serves as a compact status indicator.
 
 **The World (Right Pane)** — Live screenshot feed of the headless browser session with element overlay detection.
 

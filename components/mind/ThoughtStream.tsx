@@ -14,7 +14,7 @@ export default function ThoughtStream() {
 
   return (
     <div className="h-full overflow-y-auto px-2 py-2 font-mono text-sm">
-      <div className="text-gideon-muted text-xs uppercase tracking-widest mb-2">
+      <div className="text-resite-muted text-xs uppercase tracking-widest mb-2">
         Thought Stream
       </div>
 
@@ -28,8 +28,8 @@ export default function ThoughtStream() {
             transition={{ duration: 0.2 }}
             className="mb-1 leading-relaxed"
           >
-            <span className="text-gideon-cyan">[{t.agent}]</span>{" "}
-            <span className="text-gideon-yellow">{t.message}</span>
+            <span className="text-resite-cyan">[{t.agent}]</span>{" "}
+            <span className="text-resite-yellow">{t.message}</span>
           </motion.div>
         ))}
       </AnimatePresence>
