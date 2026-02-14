@@ -95,6 +95,7 @@ class DevLogger extends EventEmitter {
 
   clear() {
     this.logs = [];
+    this.idCounter = 0;
   }
 }
 

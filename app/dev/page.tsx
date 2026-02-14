@@ -174,7 +174,9 @@ export default function DevPage() {
         </button>
 
         <button
-          onClick={() => {
+          onClick={async () => {
+            // Clear server-side logs first, then local state
+            try { await fetch("/api/dev-logs", { method: "DELETE" }); } catch { /* ignore */ }
             setLogs([]);
             lastIdRef.current = 0;
           }}

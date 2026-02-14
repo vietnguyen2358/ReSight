@@ -100,6 +100,21 @@ export default function ChatPanel() {
 
     // Allow interrupt commands even during loading
     const isInterrupt = INTERRUPT_PATTERN.test(text);
+
+    // If there's a pending clarification question, route input as the answer
+    if (loading && pendingQuestion) {
+      const userMsg: ChatMessage = {
+        id: `user-${++idRef.current}`,
+        role: "user",
+        text,
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      submitAnswer(text);
+      return;
+    }
+
     if (loading && !isInterrupt) return;
 
     const userMsg: ChatMessage = {
@@ -171,7 +186,7 @@ export default function ChatPanel() {
       setLoading(false);
       setStatus("idle");
     }
-  }, [input, loading, setStatus]);
+  }, [input, loading, setStatus, pendingQuestion, submitAnswer]);
 
   return (
     <div className="flex flex-col h-full">
@@ -475,7 +490,11 @@ export default function ChatPanel() {
               }
             }}
             placeholder={
-              loading ? "Type 'stop' to cancel or 'go back'..." : "Message Gideon..."
+              pendingQuestion
+                ? "Type your answer..."
+                : loading
+                  ? "Type 'stop' to cancel or 'go back'..."
+                  : "Message Gideon..."
             }
             rows={2}
             className="w-full bg-transparent text-sm leading-relaxed px-4 pt-3 pb-2
@@ -487,7 +506,7 @@ export default function ChatPanel() {
               wordWrap: "break-word",
               overflowWrap: "break-word",
               maxHeight: "120px",
-              opacity: loading ? 0.6 : 1,
+              opacity: loading && !pendingQuestion ? 0.6 : 1,
             }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
@@ -520,7 +539,7 @@ export default function ChatPanel() {
 
             <button
               onClick={send}
-              disabled={!input.trim() || (loading && !INTERRUPT_PATTERN.test(input.trim()))}
+              disabled={!input.trim() || (loading && !pendingQuestion && !INTERRUPT_PATTERN.test(input.trim()))}
               className="flex items-center justify-center w-8 h-8 rounded-lg
                          cursor-pointer disabled:cursor-not-allowed
                          transition-all duration-200"

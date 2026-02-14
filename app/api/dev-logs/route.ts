@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   // JSON polling mode: return logs since a given ID
   if (searchParams.has("since")) {
     const history = devLog.getHistory();
-    const newLogs = sinceId ? history.filter((e) => e.id > sinceId) : history;
+    const newLogs = sinceId > 0 ? history.filter((e) => e.id > sinceId) : history;
     return Response.json(newLogs, {
       headers: { "Cache-Control": "no-cache" },
     });
@@ -58,4 +58,9 @@ export async function GET(req: NextRequest) {
       Connection: "keep-alive",
     },
   });
+}
+
+export async function DELETE() {
+  devLog.clear();
+  return Response.json({ ok: true });
 }

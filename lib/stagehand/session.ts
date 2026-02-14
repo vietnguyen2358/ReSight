@@ -130,6 +130,12 @@ export async function getStagehand(): Promise<Stagehand> {
         ? {
             apiKey: process.env.BROWSERBASE_API_KEY,
             projectId: process.env.BROWSERBASE_PROJECT_ID,
+            browserbaseSessionCreateParams: {
+              browserSettings: {
+                solveCaptchas: true,
+              },
+              proxies: true,
+            },
           }
         : {}),
     });

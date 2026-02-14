@@ -12,13 +12,58 @@
     },
     {
       "pattern": "Find 5 alumni from the San Jose State University SCE club with their names and LinkedIn profiles tha",
-      "steps": "Completed. Currently on: https://sce.sjsu.edu/officers",
-      "timestamp": 1771066097976
+      "steps": "I explored the SCE SJSU website looking for alumni information with LinkedIn profiles, but unfortunately I wasn't able to find a dedicated alumni page or section that lists past members with their con",
+      "timestamp": 1771067121350
     },
     {
       "pattern": "On the SCE SJSU website, look for an alumni page or section that lists past members with their Linke",
       "steps": "Completed. Currently on: https://sce.sjsu.edu/",
       "timestamp": 1771066172942
+    },
+    {
+      "pattern": "Find 5 alumni from the San Jose State University SCE club with their names and LinkedIn profiles",
+      "steps": "I explored the SCE SJSU website looking for alumni information with LinkedIn profiles, but unfortunately I wasn't able to find a dedicated alumni page or section. I checked the main homepage, the Abou",
+      "timestamp": 1771066961262
+    },
+    {
+      "pattern": "could you find 3 highly rated pizza place in sf for dinner tonight",
+      "steps": "I found 3 highly rated pizza places in San Francisco for your dinner tonight: Hi Hat (5.0 stars on Valencia St), Sforno Pizzeria Napoletana (4.9 stars on Octavia St - authentic Italian/Neapolitan styl",
+      "timestamp": 1771067297139
+    },
+    {
+      "pattern": "Get directions to Mitchell's Ice Cream",
+      "steps": "I've successfully got you to the directions page for Mitchell's Ice Cream on Google Maps! The destination is all set - it's at 688 San Jose Ave, San Francisco, CA 94110. The shop has a 4.7 star rating",
+      "timestamp": 1771067460274
+    },
+    {
+      "pattern": "navigate me to the nearest bagel place",
+      "steps": "I've navigated you to the nearest bagel place! It's Izzy's Brooklyn Bagels, located at 477 California Ave in Palo Alto with a 4.5 star rating. It's a bagel cafe with NY roots that offers spreads and o",
+      "timestamp": 1771067903255
+    },
+    {
+      "pattern": "Search for apartments under $2000 in San Jose, find a recommended option, and get directions to that",
+      "steps": "I had to stop early (Step limit: used 11/10 steps). Here's what I found so far on the page.",
+      "timestamp": 1771068145598
+    },
+    {
+      "pattern": "Go to a rental site like Zillow or Apartments.com and search for apartments in San Jose under $2000,",
+      "steps": "I had to stop early (Step limit: used 11/10 steps). Here's what I found so far on the page.",
+      "timestamp": 1771068238986
+    },
+    {
+      "pattern": "can you look on yelp for the best sushi spot in sf?",
+      "steps": "I had to stop early (Step limit: used 10/10 steps). Here's what I found so far on the page.",
+      "timestamp": 1771068977779
+    },
+    {
+      "pattern": "Find me the best 3 sushi restaurant in nyc",
+      "steps": "I had to stop early (Cancelled by user). Here's what I found so far on the page.",
+      "timestamp": 1771069953282
+    },
+    {
+      "pattern": "Find me 5 boba shops in sf on yelp.",
+      "steps": "I found 5 great boba shops in San Francisco for you! Here they are:\n\n1. **Hi Sweetie Tea and Treats** - 4.7 stars, located at 775 Jackson St. Opens at 10 AM.\n\n2. **Feng Cha Teahouse - San Francisco** ",
+      "timestamp": 1771070130666
     }
   ]
 }

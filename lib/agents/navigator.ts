@@ -58,6 +58,15 @@ After every goto_url and after any do_action that changes the page, you MUST cal
 - **Newsletter/signup modals**: Close them, say "There was a signup popup, I closed it..."
 - **Login walls**: Ask the user via ask_user: "This page needs you to be logged in. Want me to try signing in?"
 - **Captchas**: Tell the user: "There's a captcha here that I can't solve, unfortunately."
+- **Access denied / bot blocks**: If a goto_url result contains "blocked":true or the page title says "Access Denied" or similar, do NOT retry the same site or domain. Immediately fall back to Google search.
+
+## BOT BLOCK FALLBACK (CRITICAL)
+Many sites block automated browsers. When you get blocked (page title says "Access Denied", "Just a moment", "Forbidden", or the tool result has "blocked":true):
+1. Do NOT retry the same site — it will fail again
+2. Do NOT try a different URL on the same domain — also blocked
+3. Use Google search instead: goto_url("https://www.google.com/search?q={what the user wanted}")
+4. Extract info from Google results — snippets often have prices, descriptions, summaries
+5. If Google isn't enough, try an alternative unblocked site (e.g., Zillow blocked → try Realtor.com or Craigslist)
 
 ## CLARIFICATION (ask_user)
 Only when genuinely ambiguous:
@@ -71,7 +80,7 @@ Only when genuinely ambiguous:
 - Start with goto_url, then narrate what you see, then continue.
 - If something fails, try a different approach and let the user know.
 - NEVER call done until the task is actually finished.
-- If you see "LOOP DETECTED" or "ABORTED", call done immediately.
+- If you see "LOOP DETECTED", "STEP LIMIT REACHED", "TOO MANY FAILURES", "STALE PAGE", or "ABORTED" in a tool result, you MUST call done IMMEDIATELY. Do not try more actions. Summarize what you found so far.
 - Your done summary should be conversational — like telling a friend what you found.
 
 ## SITE-SPECIFIC PATTERNS
@@ -187,27 +196,112 @@ export async function navigatorAgent(
   sendThought("Narrator", `Alright, let me work on that for you...`);
 
   let stepNumber = 0;
+  let consecutiveFailures = 0;
   const actionHistory: Map<string, number> = new Map();
+  const urlHistory: string[] = [];
+  const contentHashes: string[] = [];
+  let staleCount = 0;
   const MAX_REPEATS = 2;
+  const MAX_CONSECUTIVE_FAILURES = 3;
+  const MAX_STALE_PAGES = 3;
+  const HARD_STEP_LIMIT = 10;
+
+  // ── Force-stop mechanism ──
+  // AbortController kills the generateText loop at the code level.
+  // When any loop/abort condition fires, we set forceStopReason AND
+  // call controller.abort() so the LLM cannot make another call.
+  const controller = new AbortController();
+  let forceStopReason = "";
+
+  function forceStop(reason: string) {
+    if (forceStopReason) return; // already stopping
+    forceStopReason = reason;
+    devLog.warn("navigator", `FORCE STOP: ${reason}`);
+    sendThought("Narrator", "Let me wrap up and tell you what I found.");
+    try { controller.abort(); } catch { /* ignore */ }
+  }
+
+  function quickHash(str: string): string {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+      h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+    }
+    return String(h);
+  }
 
   function checkLoop(toolName: string, args: string): string | null {
     const key = `${toolName}:${args}`;
     const count = (actionHistory.get(key) || 0) + 1;
     actionHistory.set(key, count);
     if (count > MAX_REPEATS) {
-      devLog.warn("navigator", `LOOP DETECTED: "${key}" repeated ${count} times`);
-      return `LOOP DETECTED: This exact action ("${args}") has already been tried ${count - 1} times. You MUST call done now.`;
+      forceStop(`Loop: action "${args}" repeated ${count} times`);
+      return forceStopReason;
+    }
+    if (stepNumber >= HARD_STEP_LIMIT) {
+      forceStop(`Step limit: used ${stepNumber}/${HARD_STEP_LIMIT} steps`);
+      return forceStopReason;
+    }
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      forceStop(`${consecutiveFailures} consecutive failures`);
+      return forceStopReason;
+    }
+    return null;
+  }
+
+  function trackUrl(url: string): string | null {
+    urlHistory.push(url);
+    if (urlHistory.length >= 4) {
+      const last4 = urlHistory.slice(-4);
+      if (last4[0] === last4[2] && last4[1] === last4[3] && last4[0] !== last4[1]) {
+        forceStop(`URL oscillation between ${last4[0]} and ${last4[1]}`);
+        return forceStopReason;
+      }
+    }
+    return null;
+  }
+
+  function trackContent(content: string): string | null {
+    const hash = quickHash(content);
+    contentHashes.push(hash);
+    if (contentHashes.length >= 3) {
+      const last3 = contentHashes.slice(-3);
+      if (last3[0] === last3[1] && last3[1] === last3[2]) {
+        staleCount++;
+        if (staleCount >= MAX_STALE_PAGES) {
+          forceStop(`Page unchanged after ${staleCount} actions`);
+          return forceStopReason;
+        }
+      } else {
+        staleCount = 0;
+      }
     }
     return null;
   }
 
   function checkAbort(): string | null {
     if (isAborted()) {
-      devLog.info("navigator", "ABORTED by user");
-      return "ABORTED: The user has cancelled this task. Call done immediately.";
+      forceStop("Cancelled by user");
+      return forceStopReason;
     }
     return null;
   }
+
+  function detectBotBlock(pageContent: string, pageTitle: string): string | null {
+    const content = pageContent.toLowerCase();
+    const title = pageTitle.toLowerCase();
+    if (content.includes("checking your browser") || content.includes("checking if the site connection is secure")) return "Cloudflare challenge";
+    if (title.includes("just a moment") && content.includes("ray id")) return "Cloudflare challenge";
+    if (title.includes("attention required") && content.includes("cloudflare")) return "Cloudflare block";
+    if (content.includes("verify you are human") || content.includes("are you a robot")) return "CAPTCHA";
+    if (content.includes("please enable javascript and cookies") || content.includes("please turn javascript on")) return "JavaScript/cookie wall";
+    if (content.includes("pardon our interruption")) return "Bot detection (retail)";
+    if (title === "access denied" || title.includes("access denied") || (title.includes("403") && content.length < 500)) return "Access denied";
+    if (title.includes("access to this page has been denied")) return "Access denied";
+    if (content.includes("automated access") || content.includes("bot detected")) return "Bot detection";
+    return null;
+  }
+
+  let finalMessage = "";
 
   try {
     const stagehand = await getStagehand();
@@ -223,8 +317,6 @@ export async function navigatorAgent(
     const learnedContext = learnedFlows.length > 0
       ? `\n\nLEARNED PATTERNS FROM PAST SESSIONS:\n${learnedFlows.map((f) => `- "${f.pattern}": ${f.steps}`).join("\n")}`
       : "";
-
-    let finalMessage = "";
 
     const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${learnedContext}\n\nTask: ${instruction}`;
 
@@ -242,6 +334,7 @@ export async function navigatorAgent(
       system: NAVIGATOR_SYSTEM,
       prompt: navigatorPrompt,
       stopWhen: stepCountIs(12),
+      abortSignal: controller.signal,
       tools: {
         goto_url: tool({
           description: "Navigate the browser to a URL.",
@@ -249,6 +342,7 @@ export async function navigatorAgent(
             url: z.string().describe("The URL to navigate to"),
           }),
           execute: async ({ url }) => {
+            if (forceStopReason) return { error: forceStopReason, forceStopped: true };
             const abortMsg = checkAbort();
             if (abortMsg) return { error: abortMsg };
 
@@ -257,10 +351,7 @@ export async function navigatorAgent(
             if (!fullUrl.startsWith("http")) fullUrl = `https://${fullUrl}`;
 
             const loopMsg = checkLoop("goto_url", fullUrl);
-            if (loopMsg) {
-              sendThought("Narrator", "I seem to be going in circles. Let me stop and tell you what I've found so far.");
-              return { error: loopMsg, currentUrl: page.url(), pageTitle: await page.title().catch(() => "") };
-            }
+            if (loopMsg) return { error: loopMsg, currentUrl: page.url(), pageTitle: await page.title().catch(() => "") };
 
             devLog.info("navigation", `[Step ${stepNumber}] goto_url: ${fullUrl}`);
             // Extract a friendly site name from the URL
@@ -280,13 +371,35 @@ export async function navigatorAgent(
               sendThought("Narrator", "The page is loading a bit slowly, but I'll keep going...");
             }
 
-            await page.waitForTimeout(2000);
+            // Wait longer to give Browserbase captcha solver time to work
+            await page.waitForTimeout(6000);
             await captureScreenshot(page);
 
             const pageTitle = await page.title().catch(() => fullUrl);
             sendThought("Narrator", `The page has loaded — I'm on "${pageTitle}" now.`);
 
             const ctx = await getPageContext(page);
+            consecutiveFailures = 0;
+
+            // Detect bot blocks and signal the LLM to use Google fallback
+            const blockType = detectBotBlock(String(ctx.pageContent || ""), String(ctx.pageTitle || ""));
+            if (blockType) {
+              devLog.warn("navigator", `Bot block detected: ${blockType} on ${fullUrl}`);
+              sendThought("Narrator", `That site is blocking me. Let me try a different approach...`);
+              return {
+                ...ctx,
+                blocked: true,
+                blockType,
+                suggestion: `This site blocked automated access (${blockType}). Use Google search instead: goto_url("https://www.google.com/search?q=${encodeURIComponent(instruction)}")`,
+              };
+            }
+
+            // Track URL and content for loop detection
+            const urlLoop = trackUrl(String(ctx.currentUrl));
+            if (urlLoop) return { ...ctx, error: urlLoop };
+            const contentLoop = trackContent(String(ctx.pageContent || ""));
+            if (contentLoop) return { ...ctx, error: contentLoop };
+
             devLog.info("navigator", `[Step ${stepNumber}] goto_url complete`, {
               finalUrl: ctx.currentUrl,
               pageTitle: ctx.pageTitle,
@@ -302,16 +415,14 @@ export async function navigatorAgent(
             action: z.string().describe("A single, specific action"),
           }),
           execute: async ({ action }) => {
+            if (forceStopReason) return { error: forceStopReason, forceStopped: true };
             const abortMsg = checkAbort();
             if (abortMsg) return { error: abortMsg };
 
             stepNumber++;
 
             const loopMsg = checkLoop("do_action", action);
-            if (loopMsg) {
-              sendThought("Narrator", "I keep trying the same thing and it's not working. Let me tell you what I've found so far.");
-              return { error: loopMsg, currentUrl: page.url(), pageTitle: await page.title().catch(() => "") };
-            }
+            if (loopMsg) return { error: loopMsg, currentUrl: page.url(), pageTitle: await page.title().catch(() => "") };
 
             devLog.info("navigator", `[Step ${stepNumber}] do_action: "${action}"`);
             // Make action descriptions conversational
@@ -330,10 +441,12 @@ export async function navigatorAgent(
             try {
               await stagehand.act(action);
               actTimer({ success: true });
+              consecutiveFailures = 0;
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               actTimer({ success: false, error: msg }, "error");
               devLog.error("navigator", `[Step ${stepNumber}] Action FAILED: "${action}"`, { error: msg });
+              consecutiveFailures++;
               sendThought("Narrator", `That didn't quite work — let me try a different approach...`);
               await captureScreenshot(page);
               const errCtx = await getPageContext(page);
@@ -344,6 +457,14 @@ export async function navigatorAgent(
             await captureScreenshot(page);
 
             const ctx = await getPageContext(page);
+
+            // Track content for stale page detection
+            const contentLoop = trackContent(String(ctx.pageContent || ""));
+            if (contentLoop) {
+              sendThought("Narrator", "The page doesn't seem to be changing. Let me wrap up with what I have.");
+              return { ...ctx, error: contentLoop };
+            }
+
             devLog.info("navigator", `[Step ${stepNumber}] do_action complete`, {
               currentUrl: ctx.currentUrl,
               pageTitle: ctx.pageTitle,
@@ -359,16 +480,14 @@ export async function navigatorAgent(
             instruction: z.string().describe("What information to extract from the page"),
           }),
           execute: async ({ instruction: extractInstruction }) => {
+            if (forceStopReason) return { error: forceStopReason, forceStopped: true };
             const abortMsg = checkAbort();
             if (abortMsg) return { error: abortMsg };
 
             stepNumber++;
 
             const loopMsg = checkLoop("extract_info", extractInstruction);
-            if (loopMsg) {
-              sendThought("Narrator", "I keep trying to read the same thing. Let me wrap up with what I have.");
-              return { error: loopMsg };
-            }
+            if (loopMsg) return { error: loopMsg };
 
             devLog.info("navigator", `[Step ${stepNumber}] extract_info: "${extractInstruction}"`);
             sendThought("Narrator", `Let me read through what's on the page...`);
@@ -403,6 +522,7 @@ export async function navigatorAgent(
             description: z.string().describe("A natural, spatial description of what the page looks like — 2-4 sentences covering layout, key elements, and relevant content"),
           }),
           execute: async ({ description }) => {
+            if (forceStopReason) return { error: forceStopReason, forceStopped: true };
             stepNumber++;
             devLog.info("navigator", `[Step ${stepNumber}] narrate: "${description.substring(0, 200)}"`);
             sendThought("Narrator", description);
@@ -418,6 +538,7 @@ export async function navigatorAgent(
             options: z.array(z.string()).optional().describe("Optional list of choices"),
           }),
           execute: async ({ question, options }) => {
+            if (forceStopReason) return { error: forceStopReason, forceStopped: true };
             const abortMsg = checkAbort();
             if (abortMsg) return { error: abortMsg };
 
@@ -463,6 +584,20 @@ export async function navigatorAgent(
     });
     return { success: true, message };
   } catch (error) {
+    // If this was our intentional force-stop (loop/abort), return gracefully
+    if (forceStopReason) {
+      devLog.info("navigator", `Force-stopped after ${stepNumber} steps: ${forceStopReason}`);
+      // Capture final state for the user
+      try {
+        const stagehand = await getStagehand();
+        const p = stagehand.context.activePage();
+        if (p) await captureScreenshot(p);
+      } catch { /* ignore */ }
+      const message = finalMessage || `I had to stop early (${forceStopReason}). Here's what I found so far on the page.`;
+      sendThought("Narrator", message);
+      return { success: true, message };
+    }
+
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
     devLog.error("navigator", `Navigator failed: ${errorMsg}`);
     sendThought("Narrator", `I ran into a problem — ${errorMsg}. Let me try a different approach.`);
