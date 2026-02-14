@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runOrchestrator } from "@/lib/agents/orchestrator";
+import { navigatorFallbackAgent } from "@/lib/agents/navigator";
+import { thoughtEmitter } from "@/lib/thought-stream/emitter";
+
+function sendThought(agent: string, message: string) {
+  thoughtEmitter.sendThought(agent, message);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,6 +20,11 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await runOrchestrator(instruction);
+    if (!result.success) {
+      sendThought("Orchestrator", "Primary orchestration failed, switching to fallback navigation");
+      const fallback = await navigatorFallbackAgent(instruction, sendThought);
+      return NextResponse.json(fallback, { status: fallback.success ? 200 : 500 });
+    }
 
     return NextResponse.json(result);
   } catch (error) {

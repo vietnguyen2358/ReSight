@@ -11,13 +11,18 @@ export async function getStagehand(): Promise<Stagehand> {
 
   initializing = (async () => {
     const env = (process.env.STAGEHAND_ENV as "LOCAL" | "BROWSERBASE") || "LOCAL";
+    const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
     const stagehand = new Stagehand({
       env,
-      model: {
-        modelName: "gemini-2.0-flash",
-        apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-      },
+      ...(googleApiKey
+        ? {
+            model: {
+              modelName: "gemini-2.0-flash",
+              apiKey: googleApiKey,
+            },
+          }
+        : {}),
       ...(env === "BROWSERBASE"
         ? {
             apiKey: process.env.BROWSERBASE_API_KEY,

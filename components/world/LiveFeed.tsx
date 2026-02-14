@@ -5,8 +5,13 @@ import OverlayBox from "./OverlayBox";
 
 export default function LiveFeed() {
   const { latestScreenshot, boundingBoxes } = useGideon();
+  const screenshotSrc = latestScreenshot?.startsWith("data:image")
+    ? latestScreenshot
+    : latestScreenshot
+      ? `data:image/jpeg;base64,${latestScreenshot}`
+      : null;
 
-  if (!latestScreenshot) {
+  if (!screenshotSrc) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
@@ -26,7 +31,7 @@ export default function LiveFeed() {
     <div className="relative w-full h-full flex items-center justify-center bg-black">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={`data:image/jpeg;base64,${latestScreenshot}`}
+        src={screenshotSrc}
         alt="Browser screenshot"
         className="max-w-full max-h-full object-contain"
       />
