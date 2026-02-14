@@ -12,17 +12,34 @@ export async function getStagehand(): Promise<Stagehand> {
   initializing = (async () => {
     const env = (process.env.STAGEHAND_ENV as "LOCAL" | "BROWSERBASE") || "LOCAL";
     const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const openrouterApiKey = process.env.OPENROUTER_API_KEY;
+
+    // Determine model config: prefer Google, fall back to OpenRouter
+    let modelConfig: Record<string, unknown> = {};
+    if (googleApiKey) {
+      modelConfig = {
+        model: {
+          modelName: "gemini-2.0-flash",
+          apiKey: googleApiKey,
+        },
+      };
+    } else if (openrouterApiKey) {
+      modelConfig = {
+        model: {
+          modelName: process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini",
+          apiKey: openrouterApiKey,
+          clientOptions: {
+            baseURL: "https://openrouter.ai/api/v1",
+          },
+        },
+      };
+    }
+
+    console.log(`[Stagehand] Initializing in ${env} mode with ${googleApiKey ? "Gemini" : openrouterApiKey ? "OpenRouter" : "no model"}`);
 
     const stagehand = new Stagehand({
       env,
-      ...(googleApiKey
-        ? {
-            model: {
-              modelName: "gemini-2.0-flash",
-              apiKey: googleApiKey,
-            },
-          }
-        : {}),
+      ...modelConfig,
       ...(env === "BROWSERBASE"
         ? {
             apiKey: process.env.BROWSERBASE_API_KEY,

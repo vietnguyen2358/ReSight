@@ -11,58 +11,42 @@ interface ScreenshotCache {
 const CACHE_DIR = path.join(process.cwd(), ".gideon-cache");
 const CACHE_FILE = path.join(CACHE_DIR, "latest-screenshot.json");
 
-const cache: ScreenshotCache = {
-  screenshot: null,
-  boundingBoxes: [],
-  timestamp: 0,
-};
-
-let hydrated = false;
-
-async function persistCacheToDisk(data: ScreenshotCache): Promise<void> {
-  try {
-    await fs.mkdir(CACHE_DIR, { recursive: true });
-    await fs.writeFile(CACHE_FILE, JSON.stringify(data), "utf-8");
-  } catch {
-    // Ignore persistence failures; in-memory cache still works.
-  }
-}
-
-async function hydrateCacheFromDisk(): Promise<void> {
-  if (hydrated) return;
-  hydrated = true;
-
-  try {
-    const raw = await fs.readFile(CACHE_FILE, "utf-8");
-    const parsed = JSON.parse(raw) as ScreenshotCache;
-    if (parsed && typeof parsed.timestamp === "number" && parsed.timestamp > cache.timestamp) {
-      cache.screenshot = parsed.screenshot;
-      cache.boundingBoxes = parsed.boundingBoxes || [];
-      cache.timestamp = parsed.timestamp;
-    }
-  } catch {
-    // No disk cache yet.
-  }
-}
-
 export function setLatestScreenshot(
   base64: string,
   boundingBoxes: BoundingBox[] = []
 ): void {
-  cache.screenshot = base64;
-  cache.boundingBoxes = boundingBoxes;
-  cache.timestamp = Date.now();
+  const data: ScreenshotCache = {
+    screenshot: base64,
+    boundingBoxes,
+    timestamp: Date.now(),
+  };
 
-  void persistCacheToDisk(cache);
+  console.log(`[Screenshot] Saving screenshot (${Math.round(base64.length / 1024)}KB) at ${new Date().toISOString()}`);
+
+  // Write synchronously-ish: fire and forget but log errors
+  fs.mkdir(CACHE_DIR, { recursive: true })
+    .then(() => fs.writeFile(CACHE_FILE, JSON.stringify(data), "utf-8"))
+    .then(() => console.log("[Screenshot] Saved to disk"))
+    .catch((err) => console.error("[Screenshot] Failed to save:", err));
 }
 
 export async function getLatestScreenshot(): Promise<ScreenshotCache> {
-  await hydrateCacheFromDisk();
-  return { ...cache };
+  try {
+    const raw = await fs.readFile(CACHE_FILE, "utf-8");
+    const parsed = JSON.parse(raw) as ScreenshotCache;
+    return {
+      screenshot: parsed.screenshot ?? null,
+      boundingBoxes: parsed.boundingBoxes ?? [],
+      timestamp: parsed.timestamp ?? 0,
+    };
+  } catch {
+    return { screenshot: null, boundingBoxes: [], timestamp: 0 };
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function captureScreenshot(page: any): Promise<string> {
+  console.log(`[Screenshot] Capturing from ${page.url()}`);
   const buffer = await page.screenshot({ type: "jpeg", quality: 60 });
   const base64 = Buffer.from(buffer).toString("base64");
   setLatestScreenshot(base64);
