@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGideon } from "@/components/providers/GideonProvider";
+import { MovingBorder } from "@/components/ui/moving-border";
 
 interface ChatMessage {
   id: string;
@@ -16,7 +17,6 @@ interface PendingQuestion {
   options?: string[];
 }
 
-/** Detect inter-agent messages like "Navigator → Orchestrator" */
 function parseAgent(agent: string): { from: string; to?: string } {
   const match = agent.match(/^(.+?)\s*→\s*(.+)$/);
   if (match) return { from: match[1].trim(), to: match[2].trim() };
@@ -46,7 +46,6 @@ export default function ChatPanel() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, thoughts, pendingQuestion]);
 
-  // Poll for clarification questions during loading
   useEffect(() => {
     if (loading) {
       questionPollRef.current = setInterval(async () => {
@@ -98,10 +97,8 @@ export default function ChatPanel() {
     const text = input.trim();
     if (!text) return;
 
-    // Allow interrupt commands even during loading
     const isInterrupt = INTERRUPT_PATTERN.test(text);
 
-    // If there's a pending clarification question, route input as the answer
     if (loading && pendingQuestion) {
       const userMsg: ChatMessage = {
         id: `user-${++idRef.current}`,
@@ -126,7 +123,6 @@ export default function ChatPanel() {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
-    // If it's an interrupt during loading, send it but don't set loading state again
     if (loading && isInterrupt) {
       try {
         const res = await fetch("/api/orchestrator", {
@@ -198,40 +194,110 @@ export default function ChatPanel() {
       >
         {/* Empty state */}
         {messages.length === 0 && !loading && (
-          <div className="flex flex-col items-center justify-center h-full gap-4 opacity-60">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{
-                background: "rgba(0,255,255,0.05)",
-                border: "1px solid rgba(0,255,255,0.1)",
-              }}
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="text-gideon-cyan"
-              >
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-                <path d="M8 12l2 2 4-4" />
-              </svg>
+          <div className="flex flex-col items-center justify-center h-full gap-5">
+            {/* Animated orbital icon */}
+            <div className="relative w-20 h-20" style={{ animation: "float 4s ease-in-out infinite" }}>
+              {/* Outer ring */}
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  border: "1px solid rgba(0,229,255,0.12)",
+                  animation: "orbit-spin 12s linear infinite",
+                }}
+              />
+              {/* Inner ring */}
+              <div
+                className="absolute rounded-full"
+                style={{
+                  inset: "6px",
+                  border: "1px solid rgba(212,255,0,0.08)",
+                  animation: "orbit-spin 8s linear infinite reverse",
+                }}
+              />
+              {/* Center dot */}
+              <div
+                className="absolute rounded-full"
+                style={{
+                  inset: "50%",
+                  width: "6px",
+                  height: "6px",
+                  transform: "translate(-50%, -50%)",
+                  background: "var(--color-gideon-cyan)",
+                  boxShadow: "0 0 12px rgba(0,229,255,0.4)",
+                }}
+              />
+              {/* Orbiting particle */}
+              <div
+                className="absolute"
+                style={{
+                  width: "3px",
+                  height: "3px",
+                  borderRadius: "50%",
+                  background: "var(--color-gideon-yellow)",
+                  top: "0",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  boxShadow: "0 0 6px var(--color-gideon-yellow)",
+                  animation: "orbit-spin 6s linear infinite",
+                  transformOrigin: "0 40px",
+                }}
+              />
             </div>
+
             <div className="text-center">
               <p
-                className="text-xs uppercase tracking-[0.2em] mb-2"
-                style={{ color: "var(--color-gideon-cyan)" }}
+                className="text-xs font-semibold uppercase tracking-[0.3em] mb-2"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  color: "var(--color-gideon-cyan)",
+                  textShadow: "0 0 15px rgba(0,229,255,0.2)",
+                }}
               >
                 Gideon Ready
               </p>
               <p
-                className="text-[11px] leading-relaxed max-w-[280px]"
+                className="text-[11px] leading-relaxed max-w-[260px] mb-5"
                 style={{ color: "var(--color-gideon-muted)" }}
               >
-                Try: &quot;Find protein powder on Target&quot; or &quot;Show me the latest videos from jasontheween&quot;
+                Voice-controlled browser navigation. Try a command below.
               </p>
+            </div>
+
+            {/* Suggestion cards */}
+            <div className="flex flex-col gap-2 w-full max-w-[300px]">
+              {[
+                "Find protein powder on Target",
+                "Show me latest videos from jasontheween",
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => {
+                    setInput(suggestion);
+                    inputRef.current?.focus();
+                  }}
+                  className="text-left px-4 py-3 rounded-lg text-[11px] leading-relaxed cursor-pointer transition-all duration-300 group"
+                  style={{
+                    background: "rgba(255,255,255,0.015)",
+                    border: "1px solid rgba(255,255,255,0.04)",
+                    color: "var(--color-gideon-muted)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(0,229,255,0.04)";
+                    e.currentTarget.style.borderColor = "rgba(0,229,255,0.15)";
+                    e.currentTarget.style.color = "rgba(255,255,255,0.7)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.015)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.04)";
+                    e.currentTarget.style.color = "var(--color-gideon-muted)";
+                  }}
+                >
+                  <span style={{ color: "var(--color-gideon-cyan)", opacity: 0.5, marginRight: "8px" }}>
+                    &rarr;
+                  </span>
+                  {suggestion}
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -241,39 +307,45 @@ export default function ChatPanel() {
           {messages.map((msg) => (
             <motion.div
               key={msg.id}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className={`mb-3 ${msg.role === "user" ? "flex justify-end" : ""}`}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className={`mb-4 ${msg.role === "user" ? "flex justify-end" : ""}`}
             >
               {msg.role === "user" ? (
-                /* User message — right-aligned bubble */
                 <div
-                  className="max-w-[85%] px-3.5 py-2.5 rounded-lg text-xs leading-relaxed"
+                  className="max-w-[80%] px-4 py-3 rounded-2xl rounded-br-sm text-xs leading-relaxed"
                   style={{
-                    background: "rgba(204,255,0,0.08)",
-                    border: "1px solid rgba(204,255,0,0.15)",
+                    background: "rgba(212,255,0,0.06)",
+                    border: "1px solid rgba(212,255,0,0.12)",
                     color: "var(--color-gideon-yellow)",
+                    backdropFilter: "blur(8px)",
                   }}
                 >
                   {msg.text}
                 </div>
               ) : (
-                /* Assistant response — left-aligned with accent bar */
-                <div className="max-w-[92%] flex gap-2.5">
+                <div className="max-w-[90%] flex gap-3">
                   <div
                     className="w-[2px] flex-none rounded-full mt-1"
-                    style={{ background: "var(--color-gideon-green)", opacity: 0.5 }}
+                    style={{
+                      background: "linear-gradient(180deg, var(--color-gideon-green), transparent)",
+                      opacity: 0.4,
+                    }}
                   />
                   <div>
                     <span
-                      className="text-[9px] uppercase tracking-[0.15em] font-bold"
-                      style={{ color: "var(--color-gideon-green)", opacity: 0.6 }}
+                      className="text-[9px] uppercase tracking-[0.2em] font-bold"
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        color: "var(--color-gideon-green)",
+                        opacity: 0.5,
+                      }}
                     >
                       Gideon
                     </span>
                     <p
-                      className="text-xs leading-relaxed mt-0.5"
+                      className="text-[13px] leading-relaxed mt-1"
                       style={{ color: "rgba(255,255,255,0.85)" }}
                     >
                       {msg.text}
@@ -287,7 +359,7 @@ export default function ChatPanel() {
 
         {/* Live agent thoughts during loading */}
         {loading && (
-          <div className="mb-3 space-y-1">
+          <div className="mb-3 space-y-0.5">
             <AnimatePresence mode="popLayout">
               {liveThoughts.map((t) => {
                 const { from, to } = parseAgent(t.agent);
@@ -295,23 +367,29 @@ export default function ChatPanel() {
                 const isNarrator = from === "Narrator";
 
                 if (isNarrator) {
-                  // Narrator messages — prominent, white text with green bar
                   return (
                     <motion.div
                       key={`live-${t.id}`}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="flex gap-2.5 py-1.5"
+                      className="flex gap-3 py-2"
                     >
                       <div
                         className="w-[2px] flex-none rounded-full mt-0.5"
-                        style={{ background: "var(--color-gideon-green)", opacity: 0.7 }}
+                        style={{
+                          background: "linear-gradient(180deg, var(--color-gideon-green), transparent)",
+                          opacity: 0.6,
+                        }}
                       />
                       <div className="min-w-0">
                         <span
-                          className="text-[9px] uppercase tracking-[0.15em] font-bold"
-                          style={{ color: "var(--color-gideon-green)", opacity: 0.7 }}
+                          className="text-[9px] uppercase tracking-[0.2em] font-bold"
+                          style={{
+                            fontFamily: "var(--font-display)",
+                            color: "var(--color-gideon-green)",
+                            opacity: 0.6,
+                          }}
                         >
                           Narrator
                         </span>
@@ -329,41 +407,36 @@ export default function ChatPanel() {
                 return (
                   <motion.div
                     key={`live-${t.id}`}
-                    initial={{ opacity: 0, x: -6 }}
+                    initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.15 }}
-                    className="flex items-start gap-2 py-0.5"
+                    className="flex items-start gap-2.5 py-0.5"
                   >
-                    {/* Agent indicator dot */}
                     <div
                       className="w-1 h-1 rounded-full mt-1.5 flex-none"
                       style={{
                         background: isInterAgent
                           ? "var(--color-gideon-gold)"
                           : "var(--color-gideon-cyan)",
+                        boxShadow: `0 0 4px ${isInterAgent ? "var(--color-gideon-gold)" : "var(--color-gideon-cyan)"}`,
                       }}
                     />
                     <div className="min-w-0">
                       {isInterAgent ? (
-                        /* Inter-agent communication */
                         <span
                           className="text-[10px] leading-snug"
-                          style={{ color: "rgba(255,215,0,0.5)" }}
+                          style={{ color: "rgba(255,190,11,0.45)" }}
                         >
                           <span className="font-bold">{from}</span>
                           <span style={{ opacity: 0.4 }}>{" → "}</span>
                           <span className="font-bold">{to}</span>
-                          <span style={{ opacity: 0.6 }}>
-                            {" "}
-                            {t.message}
-                          </span>
+                          <span style={{ opacity: 0.55 }}> {t.message}</span>
                         </span>
                       ) : (
-                        /* Regular agent thought */
                         <span className="text-[10px] leading-snug">
                           <span
                             className="font-bold"
-                            style={{ color: "var(--color-gideon-cyan)", opacity: 0.7 }}
+                            style={{ color: "var(--color-gideon-cyan)", opacity: 0.6 }}
                           >
                             [{from}]
                           </span>{" "}
@@ -381,17 +454,18 @@ export default function ChatPanel() {
             {/* Pending question card */}
             {pendingQuestion && (
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                className="rounded-lg p-3 mt-2"
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="rounded-xl p-4 mt-3"
                 style={{
-                  background: "rgba(0,255,255,0.05)",
-                  border: "1px solid rgba(0,255,255,0.25)",
+                  background: "rgba(0,229,255,0.04)",
+                  border: "1px solid rgba(0,229,255,0.15)",
+                  backdropFilter: "blur(8px)",
                 }}
               >
                 <p
-                  className="text-sm leading-relaxed mb-2"
+                  className="text-sm leading-relaxed mb-3"
                   style={{ color: "rgba(255,255,255,0.9)" }}
                 >
                   {pendingQuestion.question}
@@ -402,11 +476,19 @@ export default function ChatPanel() {
                       <button
                         key={i}
                         onClick={() => submitAnswer(opt)}
-                        className="px-3 py-1.5 rounded-md text-xs cursor-pointer transition-all duration-150 hover:brightness-125"
+                        className="px-3.5 py-2 rounded-lg text-xs cursor-pointer transition-all duration-200"
                         style={{
-                          background: "rgba(0,255,255,0.1)",
-                          border: "1px solid rgba(0,255,255,0.3)",
+                          background: "rgba(0,229,255,0.06)",
+                          border: "1px solid rgba(0,229,255,0.2)",
                           color: "var(--color-gideon-cyan)",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "rgba(0,229,255,0.12)";
+                          e.currentTarget.style.borderColor = "rgba(0,229,255,0.35)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "rgba(0,229,255,0.06)";
+                          e.currentTarget.style.borderColor = "rgba(0,229,255,0.2)";
                         }}
                       >
                         {opt}
@@ -417,26 +499,34 @@ export default function ChatPanel() {
               </motion.div>
             )}
 
+            {/* Connecting state */}
             {liveThoughts.length === 0 && !pendingQuestion && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex items-center gap-2 py-1"
+                className="flex items-center gap-2.5 py-2"
               >
-                <div className="flex gap-1">
-                  {[0, 1, 2].map((i) => (
+                <div className="flex gap-1 items-end h-3">
+                  {[0, 1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="w-1 h-1 rounded-full bg-gideon-gold"
+                      className="w-[2px] rounded-full"
                       style={{
-                        animation: `pulse 1s ease-in-out ${i * 0.2}s infinite`,
+                        height: "100%",
+                        background: "var(--color-gideon-gold)",
+                        animation: `waveform-${(i % 3) + 1} ${0.6 + i * 0.1}s ease-in-out ${i * 0.08}s infinite`,
+                        opacity: 0.6,
                       }}
                     />
                   ))}
                 </div>
                 <span
-                  className="text-[10px] uppercase tracking-widest"
-                  style={{ color: "var(--color-gideon-gold)", opacity: 0.6 }}
+                  className="text-[10px] uppercase tracking-[0.15em]"
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    color: "var(--color-gideon-gold)",
+                    opacity: 0.5,
+                  }}
                 >
                   Connecting to agents
                 </span>
@@ -455,30 +545,27 @@ export default function ChatPanel() {
           className="absolute top-0 left-0 right-0 h-[1px]"
           style={{
             background:
-              "linear-gradient(90deg, transparent 0%, rgba(0,255,255,0.15) 50%, transparent 100%)",
+              "linear-gradient(90deg, transparent 0%, rgba(0,229,255,0.1) 50%, transparent 100%)",
           }}
         />
 
-        {/* Input container */}
-        <div
-          className="relative rounded-xl overflow-hidden transition-all duration-300"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            border: `1px solid ${
-              loading
-                ? "rgba(255,215,0,0.3)"
-                : input.trim()
-                  ? "rgba(204,255,0,0.25)"
-                  : "rgba(255,255,255,0.08)"
-            }`,
-            boxShadow: loading
-              ? "0 0 20px rgba(255,215,0,0.08), inset 0 1px 0 rgba(255,255,255,0.03)"
+        <MovingBorder
+          duration={loading ? 2000 : 4000}
+          borderRadius="1rem"
+          colors={
+            loading
+              ? ["#ffbe0b", "#d4ff00", "#ffbe0b", "#d4ff00"]
               : input.trim()
-                ? "0 0 15px rgba(204,255,0,0.05), inset 0 1px 0 rgba(255,255,255,0.03)"
-                : "inset 0 1px 0 rgba(255,255,255,0.03)",
+                ? ["#d4ff00", "#00e5ff", "#d4ff00", "#00e5ff"]
+                : ["#505068", "#505068", "#505068", "#505068"]
+          }
+          containerClassName="w-full"
+          className="w-full"
+          style={{
+            background: "rgba(8,8,12,0.9)",
+            backdropFilter: "blur(12px)",
           }}
         >
-          {/* Textarea */}
           <textarea
             ref={inputRef}
             value={input}
@@ -493,20 +580,20 @@ export default function ChatPanel() {
               pendingQuestion
                 ? "Type your answer..."
                 : loading
-                  ? "Type 'stop' to cancel or 'go back'..."
+                  ? "Type 'stop' to cancel..."
                   : "Message Gideon..."
             }
             rows={2}
-            className="w-full bg-transparent text-sm leading-relaxed px-4 pt-3 pb-2
+            className="w-full bg-transparent text-sm leading-relaxed px-4 pt-3.5 pb-2
                        outline-none resize-none
-                       placeholder:text-white/20"
+                       placeholder:text-white/15"
             style={{
               color: "rgba(255,255,255,0.9)",
               caretColor: "var(--color-gideon-cyan)",
               wordWrap: "break-word",
               overflowWrap: "break-word",
               maxHeight: "120px",
-              opacity: loading && !pendingQuestion ? 0.6 : 1,
+              opacity: loading && !pendingQuestion ? 0.5 : 1,
             }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
@@ -515,22 +602,25 @@ export default function ChatPanel() {
             }}
           />
 
-          {/* Bottom bar: hint + send button */}
-          <div className="flex items-center justify-between px-4 pb-2.5">
+          <div className="flex items-center justify-between px-4 pb-3">
             <span
               className="text-[10px] tracking-wide"
-              style={{ color: "var(--color-gideon-muted)", opacity: 0.6 }}
+              style={{
+                fontFamily: "var(--font-display)",
+                color: "var(--color-gideon-muted)",
+                opacity: 0.5,
+              }}
             >
               {loading ? (
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-2">
                   <span
                     className="inline-block w-1.5 h-1.5 rounded-full"
                     style={{
                       background: "var(--color-gideon-gold)",
-                      animation: "pulse 1.5s ease-in-out infinite",
+                      animation: "dot-breathe 1.5s ease-in-out infinite",
                     }}
                   />
-                  Processing — type &quot;stop&quot; to cancel
+                  Processing
                 </span>
               ) : (
                 "Enter to send"
@@ -540,19 +630,17 @@ export default function ChatPanel() {
             <button
               onClick={send}
               disabled={!input.trim() || (loading && !pendingQuestion && !INTERRUPT_PATTERN.test(input.trim()))}
-              className="flex items-center justify-center w-8 h-8 rounded-lg
+              className="flex items-center justify-center w-8 h-8 rounded-xl
                          cursor-pointer disabled:cursor-not-allowed
                          transition-all duration-200"
               style={{
-                background:
-                  input.trim()
-                    ? "rgba(204,255,0,0.15)"
-                    : "rgba(255,255,255,0.03)",
-                color:
-                  input.trim()
-                    ? "var(--color-gideon-yellow)"
-                    : "var(--color-gideon-muted)",
-                opacity: input.trim() ? 1 : 0.3,
+                background: input.trim()
+                  ? "rgba(212,255,0,0.1)"
+                  : "transparent",
+                color: input.trim()
+                  ? "var(--color-gideon-yellow)"
+                  : "var(--color-gideon-muted)",
+                opacity: input.trim() ? 1 : 0.25,
               }}
             >
               <svg
@@ -561,7 +649,7 @@ export default function ChatPanel() {
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2.5"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
@@ -570,7 +658,7 @@ export default function ChatPanel() {
               </svg>
             </button>
           </div>
-        </div>
+        </MovingBorder>
       </div>
     </div>
   );

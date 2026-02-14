@@ -1,6 +1,7 @@
 "use client";
 
 import { useGideon } from "@/components/providers/GideonProvider";
+import { MovingBorder } from "@/components/ui/moving-border";
 
 export default function SpeakButton() {
   const { status } = useGideon();
@@ -8,28 +9,86 @@ export default function SpeakButton() {
   const isListening = status === "listening";
   const isThinking = status === "thinking";
 
-  const label = isListening
-    ? "Listening..."
+  const colors = isListening
+    ? ["#00ff6a", "#00e5ff", "#00ff6a", "#00e5ff"]
     : isThinking
-      ? "Thinking..."
-      : "Press Space to Speak";
+      ? ["#ffbe0b", "#d4ff00", "#ffbe0b", "#d4ff00"]
+      : ["#d4ff00", "#00e5ff", "#d4ff00", "#00e5ff"];
 
   return (
-    <button
-      id="speak-button"
+    <MovingBorder
+      duration={isListening ? 1500 : isThinking ? 2000 : 4000}
+      borderRadius="9999px"
+      colors={colors}
+      containerClassName="inline-block"
       className={`
-        w-full py-6 text-2xl font-bold uppercase tracking-widest
-        border-2 transition-all duration-300 cursor-pointer select-none
+        px-8 py-4 text-sm font-semibold uppercase tracking-[0.25em]
+        flex items-center gap-3 select-none
         ${
           isListening
-            ? "bg-gideon-green text-gideon-black border-gideon-green pulse-active"
+            ? "text-gideon-green"
             : isThinking
-              ? "bg-gideon-gold/20 text-gideon-gold border-gideon-gold"
-              : "bg-transparent text-gideon-yellow border-gideon-yellow breathe hover:bg-gideon-yellow/10"
+              ? "text-gideon-gold"
+              : "text-gideon-yellow"
         }
       `}
+      style={{
+        fontFamily: "var(--font-display)",
+        background: isListening
+          ? "rgba(0,255,106,0.06)"
+          : isThinking
+            ? "rgba(255,190,11,0.05)"
+            : "rgba(8,8,12,0.9)",
+      }}
     >
-      {label}
-    </button>
+      <button
+        id="speak-button"
+        className="flex items-center gap-3 cursor-pointer bg-transparent border-none outline-none"
+        style={{
+          fontFamily: "var(--font-display)",
+          color: "inherit",
+          fontSize: "inherit",
+          fontWeight: "inherit",
+          letterSpacing: "inherit",
+          textTransform: "inherit" as "uppercase",
+        }}
+      >
+        {/* Waveform bars when listening */}
+        {isListening && (
+          <div className="flex items-end gap-[2px] h-4">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="w-[2px] rounded-full bg-gideon-green"
+                style={{
+                  height: "100%",
+                  animation: `waveform-${(i % 3) + 1} ${0.5 + i * 0.08}s ease-in-out ${i * 0.05}s infinite`,
+                  opacity: 0.7,
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Thinking spinner */}
+        {isThinking && (
+          <div
+            className="w-4 h-4 rounded-full border border-gideon-gold/40"
+            style={{
+              borderTopColor: "var(--color-gideon-gold)",
+              animation: "orbit-spin 1s linear infinite",
+            }}
+          />
+        )}
+
+        <span>
+          {isListening
+            ? "Listening"
+            : isThinking
+              ? "Processing"
+              : "Press Space"}
+        </span>
+      </button>
+    </MovingBorder>
   );
 }

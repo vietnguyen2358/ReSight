@@ -23,11 +23,13 @@ npx playwright install chromium  # Required once for Stagehand LOCAL mode
 
 ## Environment Variables (.env.local)
 ```
-GOOGLE_GENERATIVE_AI_API_KEY=    # Single key for everything (agents + Stagehand)
+GOOGLE_GENERATIVE_AI_API_KEY=    # Required for Stagehand; also used for agents if no OpenRouter
+OPENROUTER_API_KEY=              # Optional: use OpenRouter for agent LLM calls
+OPENROUTER_MODEL=                # Optional: model name (default: openai/gpt-4o-mini)
 NEXT_PUBLIC_ELEVENLABS_AGENT_ID= # ElevenLabs conversational agent
 STAGEHAND_ENV=LOCAL              # LOCAL or BROWSERBASE
-BROWSERBASE_API_KEY=             # Optional, only for BROWSERBASE mode
-BROWSERBASE_PROJECT_ID=          # Optional, only for BROWSERBASE mode
+BROWSERBASE_API_KEY=             # Required for BROWSERBASE mode
+BROWSERBASE_PROJECT_ID=          # Required for BROWSERBASE mode
 ```
 
 ## Architecture
@@ -42,6 +44,8 @@ app/
     orchestrator/route.ts # POST: receives {instruction}, runs agent orchestrator
     thought-stream/route.ts # GET: SSE stream of agent thoughts (EventSource)
     screenshot/route.ts   # GET: returns latest base64 screenshot + bounding boxes
+    dev-logs/route.ts     # GET: poll logs (?since=ID), DELETE: clear logs
+    clarification/route.ts # GET: poll pending question, POST: submit answer
 
 components/
   SplitLayout.tsx         # 50/50 flex split: MindPane | WorldPane
@@ -49,11 +53,13 @@ components/
     GideonProvider.tsx    # React context: status, thoughts, screenshot, boundingBoxes
                           # Also subscribes to SSE thought-stream + polls /api/screenshot
   mind/
-    MindPane.tsx          # Left pane: sphere + thought stream + speak button + VoiceManager
+    MindPane.tsx          # Left pane: sphere + chat panel + speak button + VoiceManager
+    ChatPanel.tsx         # Unified chat: user messages + narrator thoughts + clarification Q&A
+                          # Supports interrupts (stop/cancel/go back) during loading
+                          # Polls /api/clarification for pending questions
     GideonSphere.tsx      # Three.js Canvas, icosahedron wireframe, color/speed by status
                           # @ts-nocheck due to R3F v8 + React 19 type incompatibility
                           # Loaded via dynamic(() => import(...), { ssr: false })
-    ThoughtStream.tsx     # AnimatePresence list of [Agent] message entries, auto-scrolls
     SpeakButton.tsx       # Toggle button, breathing/pulse CSS animations
   world/
     WorldPane.tsx         # Right pane: header + LiveFeed + scanlines overlay + status bar
@@ -66,19 +72,26 @@ components/
 
 lib/
   stagehand/
-    session.ts            # Lazy singleton Stagehand (V3 class). Promise dedup prevents races.
+    session.ts            # Lazy singleton Stagehand (globalThis). Promise dedup prevents races.
                           # Uses gemini-2.0-flash with GOOGLE_GENERATIVE_AI_API_KEY
+                          # BROWSERBASE mode: solveCaptchas + proxies enabled
     screenshot.ts         # In-memory cache: setLatestScreenshot/getLatestScreenshot/captureScreenshot
   agents/
     types.ts              # ThoughtEvent, SendThoughtFn, AgentResult, NavigatorAction
     orchestrator.ts       # generateText with 3 tools: navigate, remember, safety_check
-                          # Uses stopWhen: stepCountIs(5), inputSchema (AI SDK v6 API)
-    navigator.ts          # Stagehand act/observe cycle. Detects URL commands, captures screenshots
-                          # Page access: stagehand.context.activePage()
+                          # Handles stop/cancel/go-back commands + clarification routing
+    navigator.ts          # 6 tools: goto_url, do_action, extract_info, narrate, ask_user, done
+                          # Conversational narration for blind users ("Narrator" agent)
+                          # AbortController force-stop loop detection (kills generateText)
+                          # Bot block detection with Google search fallback
+                          # Enhanced getPageContext: headings, buttons, forms, signals
     scribe.ts             # Store/recall from user_context.json file
     guardian.ts           # LLM safety analysis, returns JSON {safe, reason, confirmationRequired}
+    cancellation.ts       # globalThis abort flag: requestAbort/clearAbort/isAborted/setLastUrl
+    clarification.ts      # Promise bridge for ask_user: askQuestion blocks, answerQuestion resolves
   thought-stream/
-    emitter.ts            # EventEmitter singleton, 100-entry history buffer, .sendThought() helper
+    emitter.ts            # EventEmitter singleton (globalThis), 100-entry history, .sendThought()
+  dev-logger.ts           # DevLogger singleton (globalThis), in-memory log buffer for /dev page
   context/
     user-context.ts       # Read/write lib/context/user_context.json (file-based key-value store)
     user_context.json     # Persistent user preferences (starts as {})
@@ -86,21 +99,33 @@ lib/
 
 ### Data Flow
 ```
-User Voice → ElevenLabs clientTool → POST /api/orchestrator
+User Voice/Text → POST /api/orchestrator
+  → Orchestrator checks: pending question? stop command? go back?
   → Orchestrator (Gemini generateText with tools)
-    → Navigator (stagehand.act/observe) → screenshots + thoughts
+    → Navigator (6 tools, narrates to user via "Narrator" thoughts)
+      → Stagehand act/observe/extract → screenshots + thoughts
+      → Bot block detection → Google search fallback
+      → Loop detection → AbortController force-stop
     → Scribe (read/write user context)
     → Guardian (safety check)
-  → Response JSON returned to ElevenLabs (spoken to user)
-  → Thoughts broadcast via thoughtEmitter → SSE /api/thought-stream → ThoughtStream UI
+  → Response returned to voice (ElevenLabs) or chat (ChatPanel)
+  → Thoughts broadcast via thoughtEmitter → SSE /api/thought-stream → ChatPanel
   → Screenshots cached in memory → polled via /api/screenshot → LiveFeed UI
 ```
 
 ### GideonProvider State
 - `status`: "idle" | "listening" | "thinking" | "speaking" — drives sphere color/speed
-- `thoughts`: array of {id, agent, message, timestamp} — rendered in ThoughtStream
+- `thoughts`: array of {id, agent, message, timestamp} — rendered in ChatPanel
 - `latestScreenshot`: base64 JPEG string — rendered in LiveFeed
 - `boundingBoxes`: array of {x, y, width, height, label} — rendered as OverlayBox
+
+### Key Agent Patterns
+- **Narrator thoughts**: agent="Narrator" gets prominent styling in ChatPanel (large white text, green bar)
+- **Clarification flow**: Navigator calls ask_user → blocks on promise → ChatPanel polls /api/clarification → user answers → promise resolves
+- **Interrupts**: "stop"/"cancel"/"go back" bypass loading state, route to orchestrator immediately
+- **Loop detection**: AbortController kills generateText at code level (not reliant on LLM obedience)
+- **Bot blocks**: detectBotBlock() checks page content, returns Google search suggestion to LLM
+- **globalThis singletons**: Stagehand, ThoughtEmitter, DevLogger all use globalThis to survive Next.js hot reloads
 
 ## Key Patterns & Gotchas
 
@@ -109,6 +134,9 @@ User Voice → ElevenLabs clientTool → POST /api/orchestrator
 - `act(instruction)` and `observe(instruction)` take string directly (not objects)
 - Page access: `stagehand.context.activePage()` not `stagehand.page`
 - Export: `Stagehand` is actually the `V3` class re-exported
+- `page.goto()` and `page.goBack()` use `timeoutMs` not `timeout`
+- BROWSERBASE mode: `browserbaseSessionCreateParams` for `solveCaptchas`, `proxies`
+- `advancedStealth` requires Scale plan (not available on free tier)
 
 ### AI SDK v6 (breaking changes from v4)
 - `tool()` uses `inputSchema` not `parameters`
