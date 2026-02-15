@@ -46,7 +46,7 @@ function buildContextUpdate(thoughts: ThoughtEntry[]): string {
 }
 
 export default function VoiceManager() {
-  const { setStatus, addThought, thoughts } = useReSight();
+  const { setStatus, addThought, thoughts, addChatMessage } = useReSight();
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const voiceStateRef = useRef<VoiceState>("idle");
 
@@ -59,6 +59,7 @@ export default function VoiceManager() {
   const actionInFlight = useRef(false);
   const operationAbortRef = useRef<AbortController | null>(null);
   const thoughtsRef = useRef(thoughts);
+  const requestTimestampRef = useRef(0);
 
   useEffect(() => {
     thoughtsRef.current = thoughts;
@@ -192,7 +193,9 @@ export default function VoiceManager() {
       setStatus("thinking");
       addVoiceThought(`Executing: "${instruction}"`);
 
-      // Immediate spoken acknowledgment so user knows we heard them
+      addChatMessage({ role: "user", text: instruction });
+      requestTimestampRef.current = Date.now();
+
       speakAck();
 
       const controller = new AbortController();
@@ -208,19 +211,23 @@ export default function VoiceManager() {
         const result = await res.json();
         const message = result?.message || "Action completed.";
 
-        // Speak the response
+        const capturedThoughts = thoughtsRef.current
+          .filter((t) => t.timestamp >= requestTimestampRef.current)
+          .map((t) => ({ id: t.id, agent: t.agent, message: t.message, type: t.type }));
+        addChatMessage({ role: "assistant", text: message, thoughts: capturedThoughts });
+
         await speakResponse(message);
       } catch (error) {
-        addVoiceThought(
-          `Action error: ${error instanceof Error ? error.message : "Unknown"}`
-        );
+        const errMsg = error instanceof Error ? error.message : "Unknown";
+        addVoiceThought(`Action error: ${errMsg}`);
+        addChatMessage({ role: "assistant", text: `Error: ${errMsg}` });
         updateState("idle");
         setStatus("idle");
       } finally {
         actionInFlight.current = false;
       }
     },
-    [addVoiceThought, setStatus, updateState, speakResponse, speakAck]
+    [addVoiceThought, setStatus, updateState, speakResponse, speakAck, addChatMessage]
   );
 
   // ── ESC key interrupt for voice mode ──

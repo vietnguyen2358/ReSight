@@ -21,6 +21,21 @@ export interface BoundingBox {
   label: string;
 }
 
+export interface ThoughtSnapshot {
+  id: string;
+  agent: string;
+  message: string;
+  type?: "thinking" | "answer";
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  timestamp: number;
+  thoughts?: ThoughtSnapshot[];
+}
+
 interface ReSightContextValue {
   status: ReSightStatus;
   setStatus: (s: ReSightStatus) => void;
@@ -36,6 +51,8 @@ interface ReSightContextValue {
   boundingBoxes: BoundingBox[];
   setBoundingBoxes: (b: BoundingBox[]) => void;
   activeAgent: string | null;
+  chatMessages: ChatMessage[];
+  addChatMessage: (msg: Omit<ChatMessage, "id" | "timestamp">) => void;
 }
 
 const ReSightContext = createContext<ReSightContextValue | null>(null);
@@ -52,7 +69,9 @@ export function ReSightProvider({ children }: { children: React.ReactNode }) {
   const [latestScreenshot, setLatestScreenshot] = useState<string | null>(null);
   const [boundingBoxes, setBoundingBoxes] = useState<BoundingBox[]>([]);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const idCounter = useRef(0);
+  const chatIdCounter = useRef(0);
 
   const setStatus = useCallback((s: ReSightStatus) => {
     setStatusState(s);
@@ -80,6 +99,18 @@ export function ReSightProvider({ children }: { children: React.ReactNode }) {
       if (!["Voice", "ReSight"].includes(agent)) {
         setActiveAgent(agent);
       }
+    },
+    []
+  );
+
+  const addChatMessage = useCallback(
+    (msg: Omit<ChatMessage, "id" | "timestamp">) => {
+      const full: ChatMessage = {
+        ...msg,
+        id: `chat-${++chatIdCounter.current}`,
+        timestamp: Date.now(),
+      };
+      setChatMessages((prev) => [...prev.slice(-99), full]);
     },
     []
   );
@@ -153,6 +184,8 @@ export function ReSightProvider({ children }: { children: React.ReactNode }) {
         boundingBoxes,
         setBoundingBoxes,
         activeAgent,
+        chatMessages,
+        addChatMessage,
       }}
     >
       {children}

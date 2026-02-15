@@ -2,23 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useReSight } from "@/components/providers/ReSightProvider";
+import { useReSight, type ChatMessage, type ThoughtSnapshot } from "@/components/providers/ReSightProvider";
 import { MovingBorder } from "@/components/ui/moving-border";
-
-interface ThoughtSnapshot {
-  id: string;
-  agent: string;
-  message: string;
-  type?: "thinking" | "answer";
-}
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-  timestamp: number;
-  thoughts?: ThoughtSnapshot[];
-}
 
 interface PendingQuestion {
   question: string;
@@ -40,13 +25,12 @@ interface ChatPanelProps {
 }
 
 export default function ChatPanel({ inputMode = "chat", onInputModeChange, speakButton }: ChatPanelProps) {
-  const { setStatus, thoughts, status } = useReSight();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { setStatus, thoughts, status, chatMessages, addChatMessage } = useReSight();
+  const messages = chatMessages;
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState<PendingQuestion | null>(null);
-  const idRef = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const requestTimestamp = useRef(0);
@@ -87,15 +71,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ instruction: "stop" }),
         }).catch(() => {});
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `user-${++idRef.current}`,
-            role: "user",
-            text: "stop",
-            timestamp: Date.now(),
-          },
-        ]);
+        addChatMessage({ role: "user", text: "stop" });
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -193,13 +169,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
 
     // Pending question → route as answer (unchanged)
     if (loading && pendingQuestion) {
-      const userMsg: ChatMessage = {
-        id: `user-${++idRef.current}`,
-        role: "user",
-        text,
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, userMsg]);
+      addChatMessage({ role: "user", text });
       setInput("");
       submitAnswer(text);
       return;
@@ -216,15 +186,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ instruction: text }),
         }).catch(() => {});
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `user-${++idRef.current}`,
-            role: "user",
-            text,
-            timestamp: Date.now(),
-          },
-        ]);
+        addChatMessage({ role: "user", text });
         setInput("");
         return;
       }
@@ -232,13 +194,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
       // running orchestrator + navigator server-side via abortActiveTask()
     }
 
-    const userMsg: ChatMessage = {
-      id: `user-${++idRef.current}`,
-      role: "user",
-      text,
-      timestamp: Date.now(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
+    addChatMessage({ role: "user", text });
     setInput("");
 
     setLoading(true);
@@ -249,8 +205,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
     abortRef.current = controller;
 
     try {
-      // Build compact conversation history (last 10 messages) for context
-      const recentHistory = [...messages, userMsg]
+      const recentHistory = [...messages.map((m) => ({ role: m.role, text: m.text })), { role: "user" as const, text }]
         .slice(-10)
         .map((m) => ({ role: m.role, text: m.text }));
 
@@ -267,29 +222,16 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
         .filter((t) => t.timestamp >= requestTimestamp.current)
         .map((t) => ({ id: t.id, agent: t.agent, message: t.message, type: t.type }));
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `reply-${++idRef.current}`,
-          role: "assistant",
-          text: result?.message || "Action completed.",
-          timestamp: Date.now(),
-          thoughts: capturedThoughts,
-        },
-      ]);
+      addChatMessage({
+        role: "assistant",
+        text: result?.message || "Action completed.",
+        thoughts: capturedThoughts,
+      });
     } catch (err) {
       // Swallow abort errors — the new request takes over
       if (err instanceof DOMException && err.name === "AbortError") return;
       const errMsg = err instanceof Error ? err.message : "Unknown error";
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `err-${++idRef.current}`,
-          role: "assistant",
-          text: `Error: ${errMsg}`,
-          timestamp: Date.now(),
-        },
-      ]);
+      addChatMessage({ role: "assistant", text: `Error: ${errMsg}` });
     } finally {
       // Only clear loading if this is still the active request
       if (abortRef.current === controller) {
@@ -297,7 +239,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
         setStatus("idle");
       }
     }
-  }, [input, loading, setStatus, pendingQuestion, submitAnswer]);
+  }, [input, loading, setStatus, pendingQuestion, submitAnswer, messages, addChatMessage]);
 
   return (
     <div className="flex flex-col h-full">
