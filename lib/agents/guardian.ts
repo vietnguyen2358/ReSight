@@ -2,41 +2,68 @@ import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import type { SendThoughtFn, AgentResult } from "./types";
 
-const GUARDIAN_SYSTEM = `You are the Guardian agent, responsible for user safety and anti-dark-pattern analysis.
-Analyze the requested action and determine if it is safe to proceed.
+const GUARDIAN_SYSTEM = `You are the Guardian agent. You protect blind users from dark patterns and scams, but you do NOT get in the way of legitimate purchases the user has asked for.
 
-You must respond with a JSON object:
-{
-  "safe": boolean,
-  "reason": string,
-  "confirmationRequired": boolean
+Respond with JSON:
+{ "safe": boolean, "reason": string, "confirmationRequired": boolean }
+
+SAFE (safe:true, confirmationRequired:false):
+- User explicitly asked to buy/order something — they already consented
+- Normal shopping actions: searching, browsing, adding to cart, checkout
+- Entering login credentials the user volunteered
+- Routine web browsing
+
+NEEDS ONE CONFIRMATION (safe:true, confirmationRequired:true):
+- Subscriptions with recurring charges
+- Downloading executable files
+- Entering payment info on a site the user didn't specifically ask to use
+
+BLOCK (safe:false):
+- Clear dark patterns: hidden fees, pre-checked boxes adding unwanted services, misleading "free trial" that auto-charges
+- Phishing or suspicious sites
+- Actions the user clearly did NOT ask for
+
+IMPORTANT: If the user said "order this" or "buy this" or "add to cart" — that IS their consent. Do NOT block or require confirmation for purchases the user requested. Be concise.`;
+
+function parseGuardianResponse(text: string): { safe: boolean; reason: string; confirmationRequired: boolean } {
+  // Strip markdown code fences if present (Gemini often wraps JSON in ```json ... ```)
+  let cleaned = text.trim();
+  cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
+  cleaned = cleaned.trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Fallback: try to extract JSON from anywhere in the text
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+    // If all parsing fails, default to safe with confirmation
+    return { safe: true, reason: "Could not parse safety analysis", confirmationRequired: true };
+  }
 }
-
-Flag as unsafe or requiring confirmation if:
-- The action involves financial transactions (buying, subscribing, paying)
-- The action involves entering personal information (PII, passwords, credit cards)
-- The action involves downloading files
-- The element looks like a dark pattern (hidden costs, misleading buttons, forced opt-ins)
-- The action could have irreversible consequences
-
-Be concise in your reasoning.`;
 
 export async function guardianAgent(
   action: string,
   pageContext: string,
-  sendThought: SendThoughtFn
+  sendThought: SendThoughtFn,
+  conversationContext?: string
 ): Promise<AgentResult> {
   sendThought("Guardian", `Analyzing safety of: "${action}"`);
 
   try {
+    let prompt = `Action requested: "${action}"\n\nPage context: ${pageContext}`;
+    if (conversationContext) {
+      prompt += `\n\nConversation context (user already said these things):\n${conversationContext}`;
+    }
+
     const { text } = await generateText({
       model: google("gemini-2.0-flash"),
       system: GUARDIAN_SYSTEM,
-      prompt: `Action requested: "${action}"\n\nPage context: ${pageContext}`,
+      prompt,
       maxOutputTokens: 300,
     });
 
-    const analysis = JSON.parse(text);
+    const analysis = parseGuardianResponse(text);
     const { safe, reason, confirmationRequired } = analysis;
 
     if (!safe) {

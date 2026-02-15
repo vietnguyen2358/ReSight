@@ -4,7 +4,7 @@ import { runOrchestrator } from "@/lib/agents/orchestrator";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { instruction } = body;
+    const { instruction, history } = body;
 
     if (!instruction || typeof instruction !== "string") {
       return NextResponse.json(
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await runOrchestrator(instruction);
+    const result = await runOrchestrator(instruction, history);
     return NextResponse.json(result, { status: result.success ? 200 : 500 });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Unknown error";

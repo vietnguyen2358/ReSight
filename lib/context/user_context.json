@@ -1,61 +1,6 @@
 {
   "_learned_flows": [
     {
-      "pattern": "find me the best boba in sf",
-      "steps": "I found the best boba spots in San Francisco for you! The top-rated place is Junbi Matcha & Tea on Market St with an impressive 4.9 stars - people love their perfectly steeped tea and perfectly chewy ",
-      "timestamp": 1771093250844
-    },
-    {
-      "pattern": "find me the best boba in san jose",
-      "steps": "I found the best boba spots in San Jose for you! Here are the top-rated options:\n\n**The Best (4.8 stars):**\n1. **Teaspoon Almaden** - 4750 Almaden Expy, 4.8 stars (461 reviews). Customers rave about \"",
-      "timestamp": 1771093486722
-    },
-    {
-      "pattern": "Search for best boba spots in San Jose and find the price of Thai tea at the top rated location",
-      "steps": "I had to stop early (Cancelled by user). Here's what I found so far on the page.",
-      "timestamp": 1771095550522
-    },
-    {
-      "pattern": "Find the best boba shop in San Jose and provide the price of their Thai tea.",
-      "steps": "I had to stop early (Cancelled by user). Here's what I found so far on the page.",
-      "timestamp": 1771095554195
-    },
-    {
-      "pattern": "Search for Teaspoon Almaden boba menu price of Thai tea",
-      "steps": "I checked the Google search results and the Teaspoon website. The menu page lists a “Slow‑steeped Thai tea topped with cream & honey boba” under Classics, but it doesn't show a price on that page. How",
-      "timestamp": 1771095844041
-    },
-    {
-      "pattern": "Find the menu price of Thai tea at Teaspoon Almaden boba shop in San Jose",
-      "steps": "I had to stop early (Cancelled by user). Here's what I found so far on the page.",
-      "timestamp": 1771095561411
-    },
-    {
-      "pattern": "Find the best boba shop in San Jose and provide the price of Thai tea.",
-      "steps": "Completed. Currently on: https://www.google.com/search?q=best+rating+boba+shop+San+Jose",
-      "timestamp": 1771095800588
-    },
-    {
-      "pattern": "Search for the best boba shop in San Francisco and find the price of their matcha latte",
-      "steps": "I opened a search for that. Currently on: https://www.google.com/search?q=Search%20for%20the%20best%20boba%20shop%20in%20San%20Francisco%20and%20find%20the%20price%20of%20their%20matcha%20latte",
-      "timestamp": 1771096233026
-    },
-    {
-      "pattern": "Search for price of matcha latte at Junbi Matcha & Tea in San Francisco and find the best boba place",
-      "steps": "**Junbi Matcha & Tea – Matcha Latte price (San Francisco)**  \n- Cold Matcha Latte (3 oz): **$9.43** (average from Uber Eats listings)  \n- Cold Guava Matcha Latte (3 oz): **$10.08**  \n- Cold Strawberry",
-      "timestamp": 1771096385106
-    },
-    {
-      "pattern": "Search for the best boba shop in San Jose and find the price of Thai tea",
-      "steps": "I’ve done a quick search for the top‑rated boba spots in San Jose and checked their menus for Thai‑tea prices.\n\n**Best spot:** Teaspoon (Hostetter Rd, San Jose) – 4.7 stars on Google and 4.6 on Yelp, ",
-      "timestamp": 1771096882088
-    },
-    {
-      "pattern": "Search for \"Teaspoon San Jose boba Thai tea price\"",
-      "steps": "I searched Google for Teaspoon San Jose boba Thai‑tea price. The snippet and several delivery‑app links show the Classic Thai Tea with honey boba at about $7.00–$7.75. The DoorDash menu lists it for $",
-      "timestamp": 1771097102633
-    },
-    {
       "pattern": "find me the best boba place in san jose and the price of their thai tea",
       "steps": "I found the best boba place in San Jose for you! It's **Boba Bliss** located at 1671 N Capitol Ave, with an impressive 4.8-star rating out of 68 reviews. Customers rave about their \"top tier vibes, ki",
       "timestamp": 1771098830833
@@ -82,8 +27,48 @@
     },
     {
       "pattern": "Find me the best boba spot in Palo Alto and their prices",
-      "steps": "Great! Here's what I found for the best boba spots in Palo Alto:\n\n**🏆 Top Pick: Molly Tea** (318 University Ave)\n- Opening late 2025\n- Known for premium, fragrant tea blends like Snowy Peach Oolong\n-",
-      "timestamp": 1771104127163
+      "steps": "Stopped.",
+      "timestamp": 1771109228924
+    },
+    {
+      "pattern": "find me the best boba spot in palo alto and their prices",
+      "steps": "I found the best boba spots in Palo Alto for you! **Molly Tea** is the top-rated option with drinks ranging from $7.50–$9.00, featuring premium jasmine teas and specialty drinks like Snowy Peach Oolon",
+      "timestamp": 1771108612965
+    },
+    {
+      "pattern": "Search for Molly Tea in Palo Alto on DoorDash and show me their menu so I can help the user place an",
+      "steps": "I see that DoorDash is blocking automated access. But here's the good news — I already have detailed menu information from the Google search results! Let me give you what I found:\n\n**Molly Tea in Palo",
+      "timestamp": 1771107972093
+    },
+    {
+      "pattern": "Open DoorDash and search for Molly Tea in Palo Alto, then show me their menu so I can help the user ",
+      "steps": "It looks like DoorDash might not have Molly Tea available or it's not showing up in their search. Let me check their website directly instead. Based on the Google search results I found earlier, I alr",
+      "timestamp": 1771109331716
+    },
+    {
+      "pattern": "Open DoorDash and search for Molly Tea in Palo Alto, then show me their full menu so I can help the ",
+      "steps": "Stopped.",
+      "timestamp": 1771109548727
+    },
+    {
+      "pattern": "Go to Amazon and search for vanilla protein powder 1 pound. Find the top-rated options and show me t",
+      "steps": "Perfect! I found the top vanilla protein powder options on Amazon for you. Here are the best-rated choices:\n\n**Top Picks:**\n\n1. **Optimum Nutrition Gold Standard 100% Whey Protein Powder, Vanilla Ice ",
+      "timestamp": 1771109872228
+    },
+    {
+      "pattern": "On Amazon, search for vanilla protein powder 1 pound. Find a highly-rated vanilla protein powder in ",
+      "steps": "Stopped.",
+      "timestamp": 1771112161591
+    },
+    {
+      "pattern": "On Amazon, add the Optimum Nutrition Gold Standard 100% Whey Protein Powder in Vanilla Ice Cream fla",
+      "steps": "I see you didn't respond. Since you didn't provide login credentials, I can't complete the full checkout process. However, I've successfully found the product and would've added it to your cart once l",
+      "timestamp": 1771112472137
+    },
+    {
+      "pattern": "Go to Amazon, log in with the email vietnguyen2358@gmail.com, search for \"Optimum Nutrition Gold Sta",
+      "steps": "I need your password to log in and complete the checkout. Could you provide your Amazon password?",
+      "timestamp": 1771112561637
     },
     {
       "pattern": "Search for the best boba shops in Palo Alto and find their prices",
@@ -99,6 +84,22 @@
       "pattern": "Find the nearest Molly Tea location to me and provide directions on how to get there",
       "steps": "Perfect! I have Molly Tea on Google Maps now. It's at **318 University Ave, Palo Alto, CA 94301**. The shop is currently open and closes at 10 PM. It's a 4.7-star rated bubble tea store with great rev",
       "timestamp": 1771106570300
+    },
+    {
+      "pattern": "Go to Amazon and search for vanilla protein powder. Find a highly-rated vanilla flavor protein powde",
+      "steps": "Stopped.",
+      "timestamp": 1771113328898
+    },
+    {
+      "pattern": "Go to Amazon and search for vanilla protein powder 1 pound. Find the highest-rated vanilla protein p",
+      "steps": "Perfect! I'm now on the product page for Optimum Nutrition Gold Standard 100% Whey Protein Powder in Vanilla Ice Cream, 1 Pound. The price is $32.99 with free delivery. I can see the \"Add to Cart\" but",
+      "timestamp": 1771113408637
+    },
+    {
+      "pattern": "Go to Amazon, log in with the email vietnguyen2358@gmail.com and complete the checkout for the Optim",
+      "steps": "I understand you want to stop. Let me summarize where we are:\n\nYou're on the Amazon sign-in page with your email vietnguyen2358@gmail.com already entered. To complete the checkout for the **Optimum Nu",
+      "timestamp": 1771113557666
     }
-  ]
+  ],
+  "browserbase_context_id": "516063f0-6075-4671-8242-74024ab22df7"
 }

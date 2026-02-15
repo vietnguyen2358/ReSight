@@ -7,7 +7,7 @@ import { scribeAgent, getFullContext, saveLearnedFlow } from "./scribe";
 import { guardianAgent } from "./guardian";
 import { thoughtEmitter } from "@/lib/thought-stream/emitter";
 import { devLog } from "@/lib/dev-logger";
-import { requestAbort, clearAbort } from "./cancellation";
+import { clearAbort, abortActiveTask, registerOrchestratorController, clearOrchestratorController } from "./cancellation";
 import { hasPendingQuestion, answerQuestion } from "./clarification";
 import { getStagehand } from "@/lib/stagehand/session";
 import { captureScreenshot } from "@/lib/stagehand/screenshot";
@@ -33,33 +33,41 @@ function getModel() {
   throw new Error("No LLM API key configured. Set GOOGLE_GENERATIVE_AI_API_KEY or OPENROUTER_API_KEY.");
 }
 
-const ORCHESTRATOR_SYSTEM = `You are ReSite, a friendly voice assistant that helps blind users browse the web. You're like a helpful friend sitting next to them, controlling their computer for them. The user CANNOT see the screen — you are their only connection to what's happening.
+const ORCHESTRATOR_SYSTEM = `You are ReSite, a friendly voice assistant helping a blind users browse the web. You're their buddy sitting next to them at the computer. Talk like a real person — short, warm, natural. Your responses are SPOKEN ALOUD so write exactly how you'd talk.
 
-You receive what the user says and decide what to do:
+## What you can do
+1. **navigate** — Any web task. Pass the user's FULL request, including context from the conversation. The navigator does all the browsing.
+2. **remember** — Store/recall user preferences.
+3. **safety_check** — ONLY use for sketchy-looking sites, dark patterns, or scams. Do NOT use for normal purchases the user asked for.
 
-1. **navigate** — For ANY web browsing task. Pass the user's FULL request — the navigator handles multi-step browsing internally.
-2. **remember** — Store or recall user preferences (e.g., "I like vanilla", "my address is...").
-3. **safety_check** — Use BEFORE purchases, downloads, or entering personal info.
+## How to talk
+- SHORT responses. 1-3 sentences. No bullet lists. No numbered steps. No "Here's what I'll do" plans.
+- Talk like a friend: "On it! Any flavor preference?" not "Before I can place an order, I need to make sure you're comfortable with a few things."
+- After navigate returns, give the highlights conversationally. Don't repeat everything verbatim.
+- End with a natural question or offer: "Want me to grab the vanilla one?" not "Which option would you prefer?"
+- NEVER explain your process. Just DO things. Don't say "I'll search, then show you options, then add to cart." Just say "Let me find that for you."
 
-HOW TO RESPOND:
-- Be conversational and natural — talk like a friend, not a computer or screen reader
-- Your response will be SPOKEN ALOUD to the user, so write it EXACTLY like natural speech
-- After navigate returns, keep the concrete facts (names, prices, ratings, counts) and rephrase naturally. Do not drop specific details.
-- NEVER describe decorative UI elements the user can't act on (generic buttons, cart icons, sign-up links). Focus on what matters: available options, constraints, and recommended next actions.
-- Use adaptive detail: short response for simple state, richer response for complex state with multiple options/tradeoffs.
-- ALWAYS end with a clear, actionable next step or offer. Guide the user forward:
-  - "What kind of drink sounds good?" not "The menu has categories."
-  - "Want me to add one of those to the cart?" not "There is a cart icon."
-  - "Should I order the Jasmine Milk Tea for you?" not "I can see menu items."
-- Keep the user feeling in control: present 2-3 clear options when relevant, then let them choose
-- For web tasks, call navigate ONCE with the complete request
-- If something involves money or personal info, call safety_check FIRST`;
+## Purchases & orders
+- When the user asks to buy/order something, JUST DO IT. Call navigate immediately.
+- Do NOT call safety_check for purchases the user requested — their request IS consent.
+- Do NOT ask for confirmation before searching, adding to cart, or checking out.
+- Do NOT give disclaimers about payment info, account requirements, or security.
+- If you need info (flavor, size), ask in ONE quick question: "What flavor — vanilla, chocolate?" not a long explanation.
+- If the user already confirmed in the conversation history, proceed without asking again.
+
+## Conversation history
+- You receive prior messages. Use them! If the user said "vanilla, 1 pound" earlier, remember that.
+- NEVER ask for information the user already provided.
+- If the user says "yes" or "go ahead", they're confirming the last thing discussed — don't ask what they mean.`;
 
 function sendThought(agent: string, message: string, type?: "thinking" | "answer") {
   thoughtEmitter.sendThought(agent, message, type);
 }
 
-export async function runOrchestrator(instruction: string): Promise<AgentResult> {
+export async function runOrchestrator(
+  instruction: string,
+  history?: { role: string; text: string }[]
+): Promise<AgentResult> {
   devLog.info("orchestrator", `New instruction: "${instruction}"`);
   const lower = instruction.trim().toLowerCase();
 
@@ -71,10 +79,10 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
     return { success: true, message: "Got it, continuing with your answer." };
   }
 
-  // 2. Stop/cancel commands — set abort flag
+  // 2. Stop/cancel commands — abort everything
   if (/\b(stop|cancel|wait|never\s*mind|halt|pause)\b/i.test(lower)) {
     devLog.info("orchestrator", `Stop command detected: "${instruction}"`);
-    requestAbort();
+    abortActiveTask(); // kills both orchestrator + navigator controllers
     sendThought("Narrator", "Okay, stopping what I was doing.", "thinking");
     return { success: true, message: "Okay, I've stopped." };
   }
@@ -100,24 +108,39 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
     }
   }
 
-  // Normal request — clear any previous abort flag
+  // Normal request — kill any running orchestrator + navigator, then clear abort
+  abortActiveTask();
   clearAbort();
+
+  // Create an AbortController for THIS orchestrator so it can be killed by future instructions
+  const orchestratorController = new AbortController();
+  registerOrchestratorController(orchestratorController);
 
   const userContext = getFullContext(sendThought);
   devLog.debug("orchestrator", "User context loaded", { context: userContext });
 
-  const prompt = `User preferences: ${JSON.stringify(userContext)}\n\nUser says: "${instruction}"`;
+  // Build conversation history for context (skip the current message — it's already the instruction)
+  let historyBlock = "";
+  if (history && history.length > 1) {
+    const prior = history.slice(0, -1); // exclude current message
+    historyBlock = "\n\nConversation so far:\n" + prior.map(
+      (m) => `${m.role === "user" ? "User" : "Gideon"}: ${m.text}`
+    ).join("\n");
+  }
+
+  const prompt = `User preferences: ${JSON.stringify(userContext)}${historyBlock}\n\nUser says: "${instruction}"`;
   const done = devLog.time("llm", "Orchestrator generateText call", {
     system: ORCHESTRATOR_SYSTEM.substring(0, 200) + "...",
     prompt,
   });
 
   try {
-    const { text, toolResults, steps } = await generateText({
+    const { text, steps } = await generateText({
       model: getModel(),
       system: ORCHESTRATOR_SYSTEM,
       prompt,
       stopWhen: stepCountIs(4),
+      abortSignal: orchestratorController.signal,
       tools: {
         navigate: tool({
           description:
@@ -177,34 +200,40 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
           }),
           execute: async ({ action, pageContext }) => {
             devLog.info("orchestrator", `Tool call: safety_check("${action}")`);
-            sendThought("Narrator", `Let me make sure this is safe before proceeding...`, "thinking");
-            const result = await guardianAgent(action, pageContext, sendThought);
-            sendThought("Narrator", result.success ? `Looks safe, going ahead.` : `Hold on — ${result.message}`, "thinking");
+            const result = await guardianAgent(action, pageContext, sendThought, historyBlock || undefined);
+            if (!result.success) {
+              sendThought("Narrator", `Hold on — ${result.message}`, "thinking");
+            }
             return result;
           },
         }),
       },
     });
 
+    clearOrchestratorController();
+
     done({
       responseText: text?.substring(0, 300),
-      toolCallCount: toolResults?.length ?? 0,
       stepCount: steps?.length ?? 0,
     });
 
-    // If the model didn't call any tools, force navigate
-    const hasToolExecution = Array.isArray(toolResults) && toolResults.length > 0;
+    // Check if any tools were actually called (use steps — more reliable than toolResults in AI SDK v6)
+    const hasToolExecution = steps && steps.some(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (s: any) => s.toolCalls && s.toolCalls.length > 0
+    );
     if (!hasToolExecution) {
       devLog.warn("orchestrator", "No tools called by LLM, forcing navigator fallback");
       return await navigatorAgent(instruction, sendThought);
     }
 
-    const needsConfirmation = toolResults?.some(
-      (r) =>
-        r.output &&
-        typeof r.output === "object" &&
-        "confirmationRequired" in r.output &&
-        (r.output as Record<string, unknown>).confirmationRequired
+    // Check if any tool result requires confirmation
+    const needsConfirmation = steps?.some(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (s: any) => s.toolResults?.some(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (r: any) => r.output && typeof r.output === "object" && r.output.confirmationRequired
+      )
     );
 
     devLog.info("orchestrator", "Orchestrator complete", {
@@ -217,6 +246,16 @@ export async function runOrchestrator(instruction: string): Promise<AgentResult>
       confirmationRequired: needsConfirmation || false,
     };
   } catch (error) {
+    clearOrchestratorController();
+
+    // External abort (new instruction superseded this one) — stop silently
+    const isAbortError = error instanceof Error &&
+      (error.name === "AbortError" || error.message.includes("aborted"));
+    if (isAbortError) {
+      devLog.info("orchestrator", `Orchestrator externally aborted (new instruction took over)`);
+      return { success: true, message: "Stopped." };
+    }
+
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
     done({ error: errorMsg }, "error");
     devLog.error("orchestrator", `Orchestrator failed: ${errorMsg}`);

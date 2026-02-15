@@ -1,5 +1,6 @@
 import { Stagehand } from "@browserbasehq/stagehand";
 import { devLog } from "@/lib/dev-logger";
+import { getUserContextValue, setUserContextValue } from "@/lib/context/user-context";
 
 // Store on globalThis to survive Next.js hot reloads in dev mode.
 // Without this, every file save resets the module-level `instance` variable,
@@ -130,6 +131,38 @@ export async function getStagehand(): Promise<Stagehand> {
     const captchaImageSelector = process.env.BROWSERBASE_CAPTCHA_IMAGE_SELECTOR;
     const captchaInputSelector = process.env.BROWSERBASE_CAPTCHA_INPUT_SELECTOR;
 
+    // ── Browserbase Context (persistent login sessions) ──
+    let browserbaseContext: { id: string; persist: true } | undefined;
+    if (env === "BROWSERBASE") {
+      let contextId = getUserContextValue("browserbase_context_id") as string | undefined;
+
+      if (!contextId) {
+        try {
+          devLog.info("stagehand", "Creating new Browserbase context for login persistence");
+          const res = await fetch("https://api.browserbase.com/v1/contexts", {
+            method: "POST",
+            headers: {
+              "X-BB-API-Key": process.env.BROWSERBASE_API_KEY!,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ projectId: process.env.BROWSERBASE_PROJECT_ID }),
+          });
+          const ctx = await res.json();
+          contextId = ctx.id as string;
+          setUserContextValue("browserbase_context_id", contextId);
+          devLog.info("stagehand", `Created Browserbase context: ${contextId}`);
+        } catch (err) {
+          devLog.warn("stagehand", `Failed to create Browserbase context: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      } else {
+        devLog.info("stagehand", `Reusing Browserbase context: ${contextId}`);
+      }
+
+      if (contextId) {
+        browserbaseContext = { id: contextId, persist: true };
+      }
+    }
+
     const raw = new Stagehand({
       env,
       model: {
@@ -146,6 +179,7 @@ export async function getStagehand(): Promise<Stagehand> {
             projectId: process.env.BROWSERBASE_PROJECT_ID,
             browserbaseSessionCreateParams: {
               browserSettings: {
+                ...(browserbaseContext ? { context: browserbaseContext } : {}),
                 solveCaptchas,
                 blockAds,
                 ...(captchaImageSelector ? { captchaImageSelector } : {}),

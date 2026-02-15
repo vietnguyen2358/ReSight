@@ -13,12 +13,12 @@ interface DevLogEntry {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  stagehand: "#a78bfa",   // purple
-  llm: "#60a5fa",         // blue
-  navigation: "#34d399",  // green
-  orchestrator: "#fbbf24", // yellow
-  navigator: "#f97316",   // orange
-  error: "#f87171",       // red
+  stagehand: "#a78bfa",
+  llm: "#00e5ff",
+  navigation: "#00ff6a",
+  orchestrator: "#ffbe0b",
+  navigator: "#d4ff00",
+  error: "#f87171",
 };
 
 const LEVEL_ICONS: Record<string, string> = {
@@ -95,9 +95,9 @@ export default function DevPage() {
   return (
     <div
       style={{
-        background: "#0a0a0a",
+        background: "var(--color-resite-black, #030305)",
         color: "#e5e5e5",
-        fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', monospace",
+        fontFamily: "var(--font-mono, 'JetBrains Mono'), 'Fira Code', monospace",
         fontSize: "12px",
         height: "100vh",
         display: "flex",
@@ -108,27 +108,40 @@ export default function DevPage() {
       <div
         style={{
           padding: "12px 16px",
-          borderBottom: "1px solid #262626",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
           display: "flex",
           alignItems: "center",
           gap: "12px",
           flexShrink: 0,
+          background: "var(--color-resite-dark, #08080c)",
         }}
       >
-        <span style={{ color: "#ccff00", fontWeight: 700, fontSize: "14px" }}>
-          GIDEON DEV
+        <span
+          style={{
+            color: "var(--color-resite-cyan, #00e5ff)",
+            fontWeight: 700,
+            fontSize: "14px",
+            fontFamily: "var(--font-display, 'Oxanium'), sans-serif",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+          }}
+        >
+          ReSite DEV
         </span>
         <span
           style={{
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: connected ? "#34d399" : "#f87171",
+            background: connected
+              ? "var(--color-resite-green, #00ff6a)"
+              : "#f87171",
+            boxShadow: connected ? "0 0 6px rgba(0,255,106,0.4)" : "none",
             display: "inline-block",
           }}
           title={connected ? "Polling active" : "Disconnected"}
         />
-        <span style={{ color: "#525252" }}>|</span>
+        <span style={{ color: "var(--color-resite-muted, #505068)" }}>|</span>
 
         {/* Category filters */}
         {categories.map((cat) => (
@@ -139,12 +152,20 @@ export default function DevPage() {
               padding: "2px 8px",
               borderRadius: "4px",
               border: "1px solid",
-              borderColor: filter === cat ? (CATEGORY_COLORS[cat] || "#ccff00") : "#333",
-              background: filter === cat ? "#1a1a1a" : "transparent",
-              color: filter === cat ? (CATEGORY_COLORS[cat] || "#ccff00") : "#737373",
+              borderColor: filter === cat
+                ? (CATEGORY_COLORS[cat] || "var(--color-resite-cyan, #00e5ff)")
+                : "rgba(255,255,255,0.08)",
+              background: filter === cat
+                ? "rgba(255,255,255,0.04)"
+                : "transparent",
+              color: filter === cat
+                ? (CATEGORY_COLORS[cat] || "var(--color-resite-cyan, #00e5ff)")
+                : "var(--color-resite-muted, #505068)",
               cursor: "pointer",
               fontSize: "11px",
               textTransform: "uppercase",
+              fontFamily: "var(--font-display, 'Oxanium'), sans-serif",
+              letterSpacing: "0.05em",
             }}
           >
             {cat}
@@ -153,7 +174,12 @@ export default function DevPage() {
 
         <div style={{ flex: 1 }} />
 
-        <span style={{ color: "#525252", fontSize: "11px" }}>
+        <span
+          style={{
+            color: "var(--color-resite-muted, #505068)",
+            fontSize: "11px",
+          }}
+        >
           {filtered.length} entries
         </span>
 
@@ -163,11 +189,19 @@ export default function DevPage() {
             padding: "2px 8px",
             borderRadius: "4px",
             border: "1px solid",
-            borderColor: autoScroll ? "#ccff00" : "#333",
-            background: autoScroll ? "#1a1a0a" : "transparent",
-            color: autoScroll ? "#ccff00" : "#737373",
+            borderColor: autoScroll
+              ? "var(--color-resite-yellow, #d4ff00)"
+              : "rgba(255,255,255,0.08)",
+            background: autoScroll
+              ? "rgba(212,255,0,0.06)"
+              : "transparent",
+            color: autoScroll
+              ? "var(--color-resite-yellow, #d4ff00)"
+              : "var(--color-resite-muted, #505068)",
             cursor: "pointer",
             fontSize: "11px",
+            fontFamily: "var(--font-display, 'Oxanium'), sans-serif",
+            letterSpacing: "0.05em",
           }}
         >
           AUTO-SCROLL {autoScroll ? "ON" : "OFF"}
@@ -175,7 +209,6 @@ export default function DevPage() {
 
         <button
           onClick={async () => {
-            // Clear server-side logs first, then local state
             try { await fetch("/api/dev-logs", { method: "DELETE" }); } catch { /* ignore */ }
             setLogs([]);
             lastIdRef.current = 0;
@@ -183,11 +216,13 @@ export default function DevPage() {
           style={{
             padding: "2px 8px",
             borderRadius: "4px",
-            border: "1px solid #333",
+            border: "1px solid rgba(255,255,255,0.08)",
             background: "transparent",
-            color: "#737373",
+            color: "var(--color-resite-muted, #505068)",
             cursor: "pointer",
             fontSize: "11px",
+            fontFamily: "var(--font-display, 'Oxanium'), sans-serif",
+            letterSpacing: "0.05em",
           }}
         >
           CLEAR
@@ -203,7 +238,13 @@ export default function DevPage() {
         }}
       >
         {filtered.length === 0 && (
-          <div style={{ color: "#525252", padding: "40px", textAlign: "center" }}>
+          <div
+            style={{
+              color: "var(--color-resite-muted, #505068)",
+              padding: "40px",
+              textAlign: "center",
+            }}
+          >
             Waiting for logs... Trigger a browser action to see activity here.
           </div>
         )}
@@ -222,7 +263,7 @@ export default function DevPage() {
                 borderLeft: `3px solid ${catColor}`,
                 cursor: hasData ? "pointer" : "default",
                 background: isError
-                  ? "rgba(248, 113, 113, 0.05)"
+                  ? "rgba(248, 113, 113, 0.04)"
                   : isExpanded
                   ? "rgba(255,255,255,0.02)"
                   : "transparent",
@@ -230,11 +271,13 @@ export default function DevPage() {
               }}
             >
               {/* Main line */}
-              <span style={{ color: "#525252" }}>{formatTime(entry.timestamp)}</span>
+              <span style={{ color: "var(--color-resite-muted, #505068)" }}>
+                {formatTime(entry.timestamp)}
+              </span>
               {" "}
               <span
                 style={{
-                  color: isError ? "#f87171" : "#525252",
+                  color: isError ? "#f87171" : "var(--color-resite-muted, #505068)",
                   fontWeight: isError ? 700 : 400,
                 }}
               >
@@ -255,11 +298,13 @@ export default function DevPage() {
                 {entry.category}
               </span>
               {" "}
-              <span style={{ color: "#d4d4d4" }}>{entry.title}</span>
+              <span style={{ color: "rgba(255,255,255,0.8)" }}>{entry.title}</span>
               {entry.durationMs != null && (
                 <span
                   style={{
-                    color: entry.durationMs > 5000 ? "#f97316" : "#525252",
+                    color: entry.durationMs > 5000
+                      ? "var(--color-resite-gold, #ffbe0b)"
+                      : "var(--color-resite-muted, #505068)",
                     marginLeft: "8px",
                   }}
                 >
@@ -267,7 +312,12 @@ export default function DevPage() {
                 </span>
               )}
               {hasData && !isExpanded && (
-                <span style={{ color: "#404040", marginLeft: "6px" }}>
+                <span
+                  style={{
+                    color: "rgba(255,255,255,0.15)",
+                    marginLeft: "6px",
+                  }}
+                >
                   {" "}+data
                 </span>
               )}
@@ -276,12 +326,12 @@ export default function DevPage() {
               {hasData && isExpanded && (
                 <pre
                   style={{
-                    color: "#a3a3a3",
+                    color: "rgba(255,255,255,0.6)",
                     margin: "4px 0 4px 20px",
                     padding: "8px",
-                    background: "#141414",
+                    background: "var(--color-resite-surface, #0c0c12)",
                     borderRadius: "4px",
-                    border: "1px solid #262626",
+                    border: "1px solid rgba(255,255,255,0.06)",
                     overflow: "auto",
                     maxHeight: "300px",
                     fontSize: "11px",

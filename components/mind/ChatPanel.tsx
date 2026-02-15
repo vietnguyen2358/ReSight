@@ -44,6 +44,7 @@ export default function ChatPanel() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const requestTimestamp = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
   const questionPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const thoughtsRef = useRef(thoughts);
@@ -140,6 +141,7 @@ export default function ChatPanel() {
 
     const isInterrupt = INTERRUPT_PATTERN.test(text);
 
+    // Pending question → route as answer (unchanged)
     if (loading && pendingQuestion) {
       const userMsg: ChatMessage = {
         id: `user-${++idRef.current}`,
@@ -153,7 +155,32 @@ export default function ChatPanel() {
       return;
     }
 
-    if (loading && !isInterrupt) return;
+    if (loading) {
+      // Abort the current client-side fetch
+      if (abortRef.current) abortRef.current.abort();
+
+      if (isInterrupt) {
+        // Pure stop/cancel — send to backend and return
+        fetch("/api/orchestrator", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ instruction: text }),
+        }).catch(() => {});
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `user-${++idRef.current}`,
+            role: "user",
+            text,
+            timestamp: Date.now(),
+          },
+        ]);
+        setInput("");
+        return;
+      }
+      // New instruction: fall through — the orchestrator will abort the
+      // running orchestrator + navigator server-side via abortActiveTask()
+    }
 
     const userMsg: ChatMessage = {
       id: `user-${++idRef.current}`,
@@ -164,38 +191,24 @@ export default function ChatPanel() {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
-    if (loading && isInterrupt) {
-      try {
-        const res = await fetch("/api/orchestrator", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ instruction: text }),
-        });
-        const result = await res.json();
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `reply-${++idRef.current}`,
-            role: "assistant",
-            text: result?.message || "Done.",
-            timestamp: Date.now(),
-          },
-        ]);
-      } catch {
-        // ignore interrupt errors
-      }
-      return;
-    }
-
     setLoading(true);
     setStatus("thinking");
     requestTimestamp.current = Date.now();
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
+      // Build compact conversation history (last 10 messages) for context
+      const recentHistory = [...messages, userMsg]
+        .slice(-10)
+        .map((m) => ({ role: m.role, text: m.text }));
+
       const res = await fetch("/api/orchestrator", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instruction: text }),
+        body: JSON.stringify({ instruction: text, history: recentHistory }),
+        signal: controller.signal,
       });
       const result = await res.json();
 
@@ -215,6 +228,8 @@ export default function ChatPanel() {
         },
       ]);
     } catch (err) {
+      // Swallow abort errors — the new request takes over
+      if (err instanceof DOMException && err.name === "AbortError") return;
       const errMsg = err instanceof Error ? err.message : "Unknown error";
       setMessages((prev) => [
         ...prev,
@@ -226,8 +241,11 @@ export default function ChatPanel() {
         },
       ]);
     } finally {
-      setLoading(false);
-      setStatus("idle");
+      // Only clear loading if this is still the active request
+      if (abortRef.current === controller) {
+        setLoading(false);
+        setStatus("idle");
+      }
     }
   }, [input, loading, setStatus, pendingQuestion, submitAnswer]);
 
@@ -780,7 +798,7 @@ export default function ChatPanel() {
               pendingQuestion
                 ? "Type your answer..."
                 : loading
-                  ? "Type 'stop' to cancel..."
+                  ? "Send new instruction or 'stop' to cancel..."
                   : "Message ReSite..."
             }
             rows={2}
@@ -793,7 +811,7 @@ export default function ChatPanel() {
               wordWrap: "break-word",
               overflowWrap: "break-word",
               maxHeight: "120px",
-              opacity: loading && !pendingQuestion ? 0.5 : 1,
+              opacity: 1,
             }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
@@ -829,7 +847,7 @@ export default function ChatPanel() {
 
             <button
               onClick={send}
-              disabled={!input.trim() || (loading && !pendingQuestion && !INTERRUPT_PATTERN.test(input.trim()))}
+              disabled={!input.trim()}
               className="flex items-center justify-center w-8 h-8 rounded-xl
                          cursor-pointer disabled:cursor-not-allowed
                          transition-all duration-200"
