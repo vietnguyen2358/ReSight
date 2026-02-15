@@ -24,7 +24,7 @@ Parallel streams:
 **The Council** — Four specialized AI agents working in two LLM layers:
 - **Orchestrator** — Routes user intent to the right agent (LLM with 3 tools)
 - **Navigator** — Plans & executes multi-step browser automation via Stagehand (LLM with 4 tools, up to 12 steps)
-- **Scribe** — Manages user preferences, memory, and learned navigation patterns (no LLM, file I/O)
+- **Scribe** — Manages user preferences and memory (no LLM, file I/O)
 - **Guardian** — Safety analysis, dark-pattern detection, purchase confirmation (LLM, single call)
 
 **Stagehand** — Browser automation layer using its own internal Gemini-2.0-flash LLM to translate natural language actions ("click the search box") into precise DOM interactions via Playwright.

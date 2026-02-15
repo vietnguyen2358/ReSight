@@ -5,7 +5,6 @@ import { z } from "zod";
 import { getStagehand } from "@/lib/stagehand/session";
 import { captureScreenshot } from "@/lib/stagehand/screenshot";
 import { devLog } from "@/lib/dev-logger";
-import { getLearnedFlows } from "./scribe";
 import { isAborted, setLastUrl, registerNavigatorController, clearNavigatorController } from "./cancellation";
 import { askQuestion } from "./clarification";
 import { describeScreenshot } from "./vision";
@@ -484,6 +483,9 @@ export async function navigatorAgent(
   // Internal status updates — shown subtly in UI, not as prominent narrator blocks
   const statusThought = (message: string) => sendThought("Navigator", message, "thinking");
 
+  // Track last tool for context-aware keepalive messages
+  const runState = { lastToolName: "", lastToolArg: "" };
+
   try {
     const stagehand = await getStagehand();
     const page = stagehand.context.activePage();
@@ -493,11 +495,6 @@ export async function navigatorAgent(
     setLastUrl(startUrl);
     devLog.info("navigator", `Active page: ${startUrl}`);
     const startCtx = await getPageContext(page);
-
-    const learnedFlows = getLearnedFlows();
-    const learnedContext = learnedFlows.length > 0
-      ? `\n\nLEARNED PATTERNS FROM PAST SESSIONS:\n${learnedFlows.map((f) => `- "${f.pattern}": ${f.steps}`).join("\n")}`
-      : "";
 
     const factHints: string[] = [];
     const startPrices = Array.isArray(startCtx.prices) ? (startCtx.prices as string[]) : [];
@@ -523,7 +520,7 @@ export async function navigatorAgent(
       devLog.info("navigator", `Playbook match: "${playbookMatch.title}" (${playbookMatch.agents.join(", ")})`);
     }
 
-    const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${factsBlock}${learnedContext}${playbookContext}\n\nTask: ${instruction}`;
+    const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${factsBlock}${playbookContext}\n\nTask: ${instruction}`;
 
 
     devLog.info("llm", "Navigator generateText call", {
@@ -533,13 +530,58 @@ export async function navigatorAgent(
 
     const navDone = devLog.time("llm", "Navigator full generateText loop");
 
-    const { text, steps } = await generateText({
-      model: getModel(),
-      system: NAVIGATOR_SYSTEM,
-      prompt: navigatorPrompt,
-      stopWhen: stepCountIs(30),
-      abortSignal: controller.signal,
-      tools: {
+    // Context-aware keepalive: message reflects instruction + what we're doing
+    const truncate = (s: string, len: number) => (s.length <= len ? s : s.slice(0, len).trim() + "...");
+    const taskSnippet = truncate(instruction.replace(/^(find|search|look for|get|open|go to|check|tell me about)\s+/i, ""), 45);
+    const getKeepaliveMessage = (stage: 0 | 1 | 2) => {
+      const { lastToolName, lastToolArg } = runState;
+      let gotoMsg = "loading the page...";
+      if (lastToolArg) {
+        try {
+          const u = new URL(lastToolArg.startsWith("http") ? lastToolArg : `https://${lastToolArg}`);
+          const q = u.searchParams.get("q") || u.searchParams.get("query") || u.searchParams.get("k");
+          if (q) {
+            gotoMsg = `searching for ${truncate(decodeURIComponent(q.replace(/\+/g, " ")), 35)}...`;
+          } else {
+            gotoMsg = `loading ${truncate(u.hostname.replace(/^www\./, ""), 30)}...`;
+          }
+        } catch {
+          gotoMsg = `loading ${truncate(lastToolArg.replace(/^https?:\/\/(www\.)?/, ""), 30)}...`;
+        }
+      }
+      const extractSnippet = runState.lastToolArg ? truncate(runState.lastToolArg.replace(/^(extract|list|get|find|read)\s+/i, ""), 30) : "";
+      const phases: Record<string, string> = {
+        goto_url: gotoMsg,
+        do_action: "waiting for the page to respond...",
+        extract_info: extractSnippet ? `gathering ${extractSnippet}...` : "reading through the page...",
+        narrate: "putting together what I found...",
+      };
+      const phaseMsg = phases[lastToolName] || (taskSnippet ? `working on ${taskSnippet}...` : "on it...");
+      const stagePrefix = ["Still ", "Taking a bit longer — ", "Almost there — "][stage];
+      return stagePrefix + phaseMsg;
+    };
+
+    const KEEPALIVE_MS = [5000, 15000, 30000];
+    const keepaliveIds: ReturnType<typeof setTimeout>[] = [];
+    KEEPALIVE_MS.forEach((ms, i) => {
+      const id = setTimeout(() => {
+        if (forceStopReason) return;
+        statusThought(getKeepaliveMessage(i as 0 | 1 | 2));
+      }, ms);
+      keepaliveIds.push(id);
+    });
+    const clearKeepalive = () => keepaliveIds.forEach((id) => clearTimeout(id));
+
+    let text: string | undefined;
+    let steps: unknown;
+    try {
+      const result = await generateText({
+        model: getModel(),
+        system: NAVIGATOR_SYSTEM,
+        prompt: navigatorPrompt,
+        stopWhen: stepCountIs(30),
+        abortSignal: controller.signal,
+        tools: {
         goto_url: tool({
           description: "Navigate the browser to a URL.",
           inputSchema: z.object({
@@ -550,6 +592,8 @@ export async function navigatorAgent(
             const abortMsg = checkAbort();
             if (abortMsg) return { error: abortMsg };
 
+            runState.lastToolName = "goto_url";
+            runState.lastToolArg = url;
             stepNumber++;
             let fullUrl = url;
             if (!fullUrl.startsWith("http")) fullUrl = `https://${fullUrl}`;
@@ -676,6 +720,8 @@ export async function navigatorAgent(
             const abortMsg = checkAbort();
             if (abortMsg) return { error: abortMsg };
 
+            runState.lastToolName = "do_action";
+            runState.lastToolArg = action;
             stepNumber++;
 
             const loopMsg = checkLoop("do_action", action);
@@ -754,6 +800,8 @@ export async function navigatorAgent(
             const abortMsg = checkAbort();
             if (abortMsg) return { error: abortMsg };
 
+            runState.lastToolName = "extract_info";
+            runState.lastToolArg = extractInstruction;
             stepNumber++;
 
             const loopMsg = checkLoop("extract_info", extractInstruction);
@@ -804,6 +852,8 @@ export async function navigatorAgent(
           }),
           execute: async ({ description, detailLevel = "normal" }) => {
             if (forceStopReason) return { error: forceStopReason, forceStopped: true };
+            runState.lastToolName = "narrate";
+            runState.lastToolArg = "";
             stepNumber++;
             devLog.info("navigator", `[Step ${stepNumber}] narrate (${detailLevel}): "${description.substring(0, 200)}"`);
 
@@ -868,10 +918,15 @@ export async function navigatorAgent(
         }),
       },
     });
+      text = result.text;
+      steps = result.steps;
+    } finally {
+      clearKeepalive();
+    }
 
     navDone({
       totalSteps: stepNumber,
-      llmSteps: steps?.length ?? 0,
+      llmSteps: Array.isArray(steps) ? steps.length : 0,
       finalUrl: page.url(),
     });
 
@@ -885,6 +940,11 @@ export async function navigatorAgent(
       message = narrations.length > 0
         ? narrations[narrations.length - 1]
         : `I finished browsing. Currently on: ${await page.title().catch(() => page.url())}`;
+    }
+    // Never return the generic "blank page" / "starting fresh" message when we did nothing
+    const isBlankPageGeneric = stepNumber === 0 && /starting fresh|blank page|ready to help.*what would you like/i.test(message);
+    if (isBlankPageGeneric) {
+      message = "What would you like me to find or do on the web?";
     }
     devLog.info("navigator", `========== DONE (${stepNumber} steps) ==========`, {
       message: message.substring(0, 300),

@@ -193,6 +193,15 @@ export async function getStagehand(): Promise<Stagehand> {
 
     await raw.init();
 
+    // Ensure we have an active page — Browserbase context can be empty (no pages)
+    // when reusing a context or after session disconnect
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const context = (raw as any).context;
+    if (context && !context.activePage?.()) {
+      devLog.info("stagehand", "No active page — creating new page");
+      await context.newPage("about:blank");
+    }
+
     // Browserbase emits CAPTCHA lifecycle events via page console logs.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const page = (raw as any)?.context?.activePage?.();

@@ -3,7 +3,7 @@ import { google } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 import { navigatorAgent } from "./navigator";
-import { scribeAgent, getFullContext, saveLearnedFlow } from "./scribe";
+import { scribeAgent, getFullContext, cleanupLearnedFlows } from "./scribe";
 import { guardianAgent } from "./guardian";
 import { thoughtEmitter } from "@/lib/thought-stream/emitter";
 import { devLog } from "@/lib/dev-logger";
@@ -135,13 +135,23 @@ export async function runOrchestrator(
   abortActiveTask();
   clearAbort();
 
-  // Immediate conversational feedback so blind users aren't waiting in silence
-  sendThought("Narrator", "On it, give me a sec!", "thinking");
+  // Immediate conversational feedback — varied so it doesn't feel robotic
+  const initialMessages = [
+    "On it!",
+    "Got it, one sec.",
+    "Sure thing.",
+    "Let me look into that.",
+    "Alright, checking it out.",
+    "Working on it.",
+  ];
+  const initialMsg = initialMessages[Math.floor(Math.random() * initialMessages.length)];
+  sendThought("Narrator", initialMsg, "thinking");
 
   // Create an AbortController for THIS orchestrator so it can be killed by future instructions
   const orchestratorController = new AbortController();
   registerOrchestratorController(orchestratorController);
 
+  cleanupLearnedFlows();
   const userContext = getFullContext(sendThought);
   devLog.debug("orchestrator", "User context loaded", { context: userContext });
 
@@ -183,17 +193,6 @@ export async function runOrchestrator(
               success: result.success,
               messagePreview: result.message?.substring(0, 200),
             });
-
-            // Learn from successful navigations
-            if (result.success && result.message) {
-              try {
-                const pattern = navInstruction.substring(0, 100);
-                const steps = result.message.substring(0, 200);
-                saveLearnedFlow(pattern, steps);
-              } catch {
-                // ignore save errors
-              }
-            }
 
             return result;
           },
@@ -249,6 +248,12 @@ export async function runOrchestrator(
       (s: any) => s.toolCalls && s.toolCalls.length > 0
     );
     if (!hasToolExecution) {
+      // Only send to navigator if the instruction looks like a browsing task
+      const looksLikeBrowsing = /\b(find|search|open|go to|buy|check|get|look up|navigate|browse|compare|directions|restaurant|product|price|event|form|dmv|appointment|website|link|url)\b|https?:\/\//i.test(instruction);
+      if (!looksLikeBrowsing && text?.trim()) {
+        devLog.info("orchestrator", "No tools called, instruction not browsing — returning LLM response");
+        return { success: true, message: polishForVoice(text), confirmationRequired: false };
+      }
       devLog.warn("orchestrator", "No tools called by LLM, forcing navigator fallback");
       const fallback = await navigatorAgent(instruction, sendThought);
       return { ...fallback, message: polishForVoice(fallback.message) };

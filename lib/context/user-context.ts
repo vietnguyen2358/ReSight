@@ -26,3 +26,11 @@ export function getUserContextValue(key: string): unknown {
 export function setUserContextValue(key: string, value: unknown): void {
   writeUserContext({ [key]: value });
 }
+
+export function removeUserContextKey(key: string): void {
+  const ctx = readUserContext();
+  if (!(key in ctx)) return;
+  const next = { ...ctx };
+  delete next[key];
+  writeFileSync(CONTEXT_PATH, JSON.stringify(next, null, 2), "utf-8");
+}

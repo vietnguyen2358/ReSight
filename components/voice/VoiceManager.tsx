@@ -165,15 +165,17 @@ export default function VoiceManager() {
 
   // ── Quick spoken acknowledgment via TTS ──
   const speakAck = useCallback(
-    (instruction: string) => {
+    () => {
       const acks = [
-        "Got it, working on that now.",
-        "On it.",
-        "Sure, let me look into that.",
-        "Sounds good, one moment.",
-        "Alright, let me do that for you.",
+        "Got it, working on that.",
+        "On it!",
+        "Sure, one sec.",
+        "Sounds good.",
+        "Alright, checking it out.",
+        "Let me look into that.",
+        "Working on it.",
       ];
-      const idx = instruction.length % acks.length;
+      const idx = Math.floor(Math.random() * acks.length);
       speakProgress(acks[idx]);
     },
     [speakProgress]
@@ -198,7 +200,7 @@ export default function VoiceManager() {
       addVoiceThought(`Executing: "${instruction}"`);
 
       // Immediate spoken acknowledgment so user knows we heard them
-      speakAck(instruction);
+      speakAck();
 
       try {
         const res = await fetch("/api/orchestrator", {

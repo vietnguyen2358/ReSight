@@ -1,15 +1,9 @@
 import {
   readUserContext,
   setUserContextValue,
-  getUserContextValue,
+  removeUserContextKey,
 } from "@/lib/context/user-context";
 import type { SendThoughtFn, AgentResult } from "./types";
-
-export interface LearnedFlow {
-  pattern: string;
-  steps: string;
-  timestamp: number;
-}
 
 export async function scribeAgent(
   action: "store" | "recall",
@@ -70,29 +64,13 @@ export function getFullContext(sendThought: SendThoughtFn): Record<string, unkno
   return ctx;
 }
 
-/**
- * Save a successful navigation pattern so the navigator can learn from it.
- * Called by the orchestrator after a successful navigation completes.
- */
-export function saveLearnedFlow(pattern: string, steps: string): void {
-  const flows = getLearnedFlows();
-  // Don't duplicate — update if pattern already exists
-  const existing = flows.findIndex((f) => f.pattern === pattern);
-  if (existing >= 0) {
-    flows[existing] = { pattern, steps, timestamp: Date.now() };
-  } else {
-    flows.push({ pattern, steps, timestamp: Date.now() });
+// One-time cleanup: remove deprecated _learned_flows from user context
+let learnedFlowsCleaned = false;
+export function cleanupLearnedFlows(): void {
+  if (learnedFlowsCleaned) return;
+  learnedFlowsCleaned = true;
+  const ctx = readUserContext();
+  if ("_learned_flows" in ctx) {
+    removeUserContextKey("_learned_flows");
   }
-  // Keep only the last 20 flows
-  const trimmed = flows.slice(-20);
-  setUserContextValue("_learned_flows", trimmed);
-}
-
-/**
- * Get all learned navigation flows from past sessions.
- */
-export function getLearnedFlows(): LearnedFlow[] {
-  const raw = getUserContextValue("_learned_flows");
-  if (Array.isArray(raw)) return raw as LearnedFlow[];
-  return [];
 }
