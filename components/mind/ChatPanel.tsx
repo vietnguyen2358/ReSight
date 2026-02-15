@@ -33,7 +33,13 @@ function parseAgent(agent: string): { from: string; to?: string } {
 
 const INTERRUPT_PATTERN = /\b(stop|cancel|wait|never\s*mind|halt|pause|go\s*back|go back|back|undo|previous(\s*page)?)\b/i;
 
-export default function ChatPanel() {
+interface ChatPanelProps {
+  inputMode?: "voice" | "chat";
+  onInputModeChange?: (mode: "voice" | "chat") => void;
+  speakButton?: React.ReactNode;
+}
+
+export default function ChatPanel({ inputMode = "chat", onInputModeChange, speakButton }: ChatPanelProps) {
   const { setStatus, thoughts, status } = useGideon();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -788,127 +794,159 @@ export default function ChatPanel() {
         <div ref={bottomRef} />
       </div>
 
-      {/* ── Input Area ── */}
+      {/* ── Input Dock: segmented toggle + active input ── */}
       <div className="flex-none relative px-4 pb-4 pt-2">
         {/* Top separator */}
         <div
           className="absolute top-0 left-0 right-0 h-[1px]"
           style={{
-            background:
-              "linear-gradient(90deg, transparent 0%, rgba(0,229,255,0.1) 50%, transparent 100%)",
+            background: "linear-gradient(90deg, transparent 0%, rgba(0,229,255,0.1) 50%, transparent 100%)",
           }}
         />
 
-        <MovingBorder
-          duration={loading ? 2000 : 4000}
-          borderRadius="1rem"
-          colors={
-            loading
-              ? ["#ffbe0b", "#d4ff00", "#ffbe0b", "#d4ff00"]
-              : input.trim()
-                ? ["#d4ff00", "#00e5ff", "#d4ff00", "#00e5ff"]
-                : ["#505068", "#505068", "#505068", "#505068"]
-          }
-          containerClassName="w-full"
-          className="w-full"
-          style={{
-            background: "rgba(8,8,12,0.9)",
-            backdropFilter: "blur(12px)",
-          }}
-        >
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            placeholder={
-              pendingQuestion
-                ? "Type your answer..."
-                : loading
-                  ? "Send new instruction or 'stop' to cancel..."
-                  : "Message ReSite..."
-            }
-            rows={2}
-            className="w-full bg-transparent text-sm leading-relaxed px-4 pt-3.5 pb-2
-                       outline-none resize-none
-                       placeholder:text-white/15"
-            style={{
-              color: "rgba(255,255,255,0.9)",
-              caretColor: "var(--color-resite-cyan)",
-              wordWrap: "break-word",
-              overflowWrap: "break-word",
-              maxHeight: "120px",
-              opacity: 1,
-            }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = "auto";
-              target.style.height = Math.min(target.scrollHeight, 120) + "px";
-            }}
-          />
-
-          <div className="flex items-center justify-between px-4 pb-3">
-            <span
-              className="text-[10px] tracking-wide"
+        {/* Segmented Voice / Chat toggle */}
+        {onInputModeChange && (
+          <div className="flex justify-center mb-3">
+            <div
+              className="inline-flex items-center rounded-full p-[3px]"
               style={{
-                fontFamily: "var(--font-display)",
-                color: "var(--color-resite-muted)",
-                opacity: 0.5,
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
               }}
             >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span
-                    className="inline-block w-1.5 h-1.5 rounded-full"
+              {(["voice", "chat"] as const).map((mode) => {
+                const active = inputMode === mode;
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => onInputModeChange(mode)}
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] uppercase tracking-[0.15em] cursor-pointer transition-all duration-300"
                     style={{
-                      background: "var(--color-resite-gold)",
-                      animation: "dot-breathe 1.5s ease-in-out infinite",
+                      fontFamily: "var(--font-display)",
+                      background: active ? "rgba(0,229,255,0.08)" : "transparent",
+                      color: active ? "var(--color-resite-cyan)" : "var(--color-resite-muted)",
+                      border: active ? "1px solid rgba(0,229,255,0.15)" : "1px solid transparent",
                     }}
-                  />
-                  Processing
-                </span>
-              ) : (
-                "Enter to send"
-              )}
-            </span>
-
-            <button
-              onClick={send}
-              disabled={!input.trim()}
-              className="flex items-center justify-center w-8 h-8 rounded-xl
-                         cursor-pointer disabled:cursor-not-allowed
-                         transition-all duration-200"
-              style={{
-                background: input.trim()
-                  ? "rgba(212,255,0,0.1)"
-                  : "transparent",
-                color: input.trim()
-                  ? "var(--color-resite-yellow)"
-                  : "var(--color-resite-muted)",
-                opacity: input.trim() ? 1 : 0.25,
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14" />
-                <path d="M12 5l7 7-7 7" />
-              </svg>
-            </button>
+                  >
+                    {mode === "voice" ? (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" x2="12" y1="19" y2="22" />
+                      </svg>
+                    ) : (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                        <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 16h8" />
+                      </svg>
+                    )}
+                    {mode}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </MovingBorder>
+        )}
+
+        {/* Active input method */}
+        {inputMode === "voice" && speakButton ? (
+          <div className="flex justify-center">
+            {speakButton}
+          </div>
+        ) : inputMode === "chat" ? (
+          <MovingBorder
+            duration={loading ? 2000 : 4000}
+            borderRadius="1rem"
+            colors={
+              loading
+                ? ["#ffbe0b", "#d4ff00", "#ffbe0b", "#d4ff00"]
+                : input.trim()
+                  ? ["#d4ff00", "#00e5ff", "#d4ff00", "#00e5ff"]
+                  : ["#505068", "#505068", "#505068", "#505068"]
+            }
+            containerClassName="w-full"
+            className="w-full"
+            style={{
+              background: "rgba(8,8,12,0.9)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              placeholder={
+                pendingQuestion
+                  ? "Type your answer..."
+                  : loading
+                    ? "Send new instruction or 'stop' to cancel..."
+                    : "Message ReSite..."
+              }
+              rows={2}
+              className="w-full bg-transparent text-sm leading-relaxed px-4 pt-3.5 pb-2
+                         outline-none resize-none placeholder:text-white/15"
+              style={{
+                color: "rgba(255,255,255,0.9)",
+                caretColor: "var(--color-resite-cyan)",
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+                maxHeight: "120px",
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = "auto";
+                target.style.height = Math.min(target.scrollHeight, 120) + "px";
+              }}
+            />
+            <div className="flex items-center justify-between px-4 pb-3">
+              <span
+                className="text-[10px] tracking-wide"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  color: "var(--color-resite-muted)",
+                  opacity: 0.5,
+                }}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="inline-block w-1.5 h-1.5 rounded-full"
+                      style={{
+                        background: "var(--color-resite-gold)",
+                        animation: "dot-breathe 1.5s ease-in-out infinite",
+                      }}
+                    />
+                    Processing
+                  </span>
+                ) : (
+                  "Enter to send"
+                )}
+              </span>
+              <button
+                onClick={send}
+                disabled={!input.trim()}
+                className="flex items-center justify-center w-8 h-8 rounded-xl
+                           cursor-pointer disabled:cursor-not-allowed transition-all duration-200"
+                style={{
+                  background: input.trim() ? "rgba(212,255,0,0.1)" : "transparent",
+                  color: input.trim() ? "var(--color-resite-yellow)" : "var(--color-resite-muted)",
+                  opacity: input.trim() ? 1 : 0.25,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14" />
+                  <path d="M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </MovingBorder>
+        ) : null}
       </div>
     </div>
   );

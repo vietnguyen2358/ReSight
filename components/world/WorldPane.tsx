@@ -78,7 +78,7 @@ export default function WorldPane() {
       </div>
 
       {/* Feed */}
-      <div className="flex-1 relative overflow-hidden vignette">
+      <div className="flex-1 relative overflow-hidden vignette grid place-items-center">
         <LiveFeed />
         <div className="scanlines" />
       </div>

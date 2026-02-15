@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import GideonSphere from "./GideonSphere";
 import ChatPanel from "./ChatPanel";
 import AgentGraph from "./AgentGraph";
@@ -8,8 +9,6 @@ import VoiceManager from "@/components/voice/VoiceManager";
 import { useGideon } from "@/components/providers/GideonProvider";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { SparklesCore } from "@/components/ui/sparkles";
-
-const hasElevenLabs = !!process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; dotClass: string; sparkleColor: string }> = {
   idle: {
@@ -41,12 +40,31 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dotClass: st
 
 export default function MindPane() {
   const { status } = useGideon();
+  const [inputMode, setInputMode] = useState<"voice" | "chat">("voice");
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.idle;
   const isActive = status === "thinking" || status === "listening";
 
+  // Tab key toggles between voice and chat modes
+  const toggleMode = useCallback(() => {
+    setInputMode((m) => (m === "voice" ? "chat" : "voice"));
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      // Don't hijack Tab inside text fields
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      e.preventDefault();
+      toggleMode();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [toggleMode]);
+
   return (
     <div className="flex flex-col h-full bg-resite-black relative overflow-hidden">
-      {hasElevenLabs && <VoiceManager />}
+      {inputMode === "voice" && <VoiceManager />}
 
       {/* Aceternity background beams */}
       <BackgroundBeams className="opacity-30" />
@@ -163,6 +181,7 @@ export default function MindPane() {
             </div>
           </div>
 
+
         </div>
 
         {/* Bottom border */}
@@ -182,12 +201,11 @@ export default function MindPane() {
 
       {/* ── Main Content ── */}
       <div className="flex-1 overflow-hidden relative z-10">
-        <ChatPanel />
-        {hasElevenLabs && (
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10">
-            <SpeakButton />
-          </div>
-        )}
+        <ChatPanel
+          inputMode={inputMode}
+          onInputModeChange={setInputMode}
+          speakButton={<SpeakButton />}
+        />
       </div>
     </div>
   );

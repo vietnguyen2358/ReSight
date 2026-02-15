@@ -1,41 +1,6 @@
 {
   "_learned_flows": [
     {
-      "pattern": "Go to Google.com, click sign in, enter the email resite1234@gmail.com and password treehacks2026!, t",
-      "steps": "I see you're on the Amazon registration page. The page is asking you to enable cookies and shows a sign-up form. Let me help you create a new account.\n\nBefore I proceed, I need to confirm: **Do you wa",
-      "timestamp": 1771115294546
-    },
-    {
-      "pattern": "Go to google.com in a new tab. Sign in with email resite1234@gmail.com and password treehacks2026!. ",
-      "steps": "Done! I've successfully signed into Google with resite1234@gmail.com and navigated to Gmail. Your inbox is ready to go, and you're all logged in. You can now compose emails, check your inbox, and acce",
-      "timestamp": 1771115394187
-    },
-    {
-      "pattern": "You're already in Gmail with the user logged in as resite1234@gmail.com. Open the inbox view so the ",
-      "steps": "Alright, I'm ready to help! To compose a new email, I'll need a couple of quick details:\n\n1. **Who do you want to send the email to?** (their email address)\n2. **What should the subject be?**\n3. **Wha",
-      "timestamp": 1771115453537
-    },
-    {
-      "pattern": "I'm in Gmail inbox. Click the compose button to start a new email to nicholasl.le224@gmail.com",
-      "steps": "Perfect! I've successfully opened the compose window and entered the recipient email address nicholasl.le224@gmail.com. The form is now ready for you to add a subject line and message body. What would",
-      "timestamp": 1771115519265
-    },
-    {
-      "pattern": "You're in Gmail compose with nicholasl.le224@gmail.com as the recipient. Add the subject \"greetings ",
-      "steps": "Done! I've successfully sent your email to nicholasl.le224@gmail.com with the subject \"greetings from Resite\" and your hello message. The email went through and you got a confirmation.",
-      "timestamp": 1771115613029
-    },
-    {
-      "pattern": "Open Gmail and show me the inbox for resite1234@gmail.com",
-      "steps": "I see. Google couldn't verify the account and is showing a message that says \"Google couldn't verify this account belongs to you. Try again later or use Account Recovery for help.\"\n\nUnfortunately, Goo",
-      "timestamp": 1771116156961
-    },
-    {
-      "pattern": "Open treehacks.com in the browser",
-      "steps": "I'm ready to help! What would you like me to do? \n\nI can search for anything on Google, browse Amazon, check out local spots, or help you with pretty much any site. Just let me know what you're lookin",
-      "timestamp": 1771118496948
-    },
-    {
       "pattern": "On treehacks.com, scroll down to find and tell me about the sponsors section. Read me the sponsor na",
       "steps": "I had to stop early (Loop: action \"scroll down\" repeated 6 times). Here's what I found so far on the page.",
       "timestamp": 1771118203903
@@ -87,18 +52,53 @@
     },
     {
       "pattern": "Go to Google Maps and search for highly-rated coffee shops near San Jose State University SJSU. Find",
-      "steps": "Okay, here's your coffee shop lineup near SJSU! A.M. Craft is your top pick with a 4.8-star rating and 198 reviews at 481 E San Carlos St — super close to campus and people love it. Nirvana Soul Coffe",
-      "timestamp": 1771126087479
+      "steps": "Awesome! I found 6 great coffee shops near SJSU—all have photos available. Here's the breakdown:\n\n**Top picks by rating:**\n- **A.M. Craft** — 4.8 stars (198 reviews), closest to campus at 481 E San Ca",
+      "timestamp": 1771132426969
     },
     {
       "pattern": "Go to Google Maps and get transit directions from San Jose State University SJSU to the San Francisc",
-      "steps": "Got your public transit route! San Jose State to the Ferry Building takes 1 hour 43 minutes, leaving at 7:55 PM and arriving at 9:38 PM. You'll use the Rapid 500 bus, then Orange-N and Blue-S lines. W",
-      "timestamp": 1771127269301
+      "steps": "Got your transit route! SJSU to Ferry Building is 1 hour 54 minutes—depart 8:24 PM, arrive 10:18 PM. Take Bus 66, then Orange-N subway, then Blue-S line. Need anything else?",
+      "timestamp": 1771129372985
     },
     {
       "pattern": "Go to Amazon and search for whey protein. Find two different whey protein products, note their price",
       "steps": "Let me give you the full breakdown:\n\n**Product 1: Optimum Nutrition Gold Standard 100% Whey (Vanilla Ice Cream)**\n- Price: $21.12\n- Size: 1 pound (16 ounces)\n- Rating: 4.6 stars with 260,092 reviews\n-",
       "timestamp": 1771127511418
+    },
+    {
+      "pattern": "Go to Amazon and search for whey protein. Find two different whey protein products and get their pri",
+      "steps": "Got two solid whey proteins for you! Optimum Nutrition Gold Standard (Vanilla) is $21.12 for 1 lb, 4.6 stars with 260K reviews. Nutricost is $59.95 for 5 lbs, 4.5 stars if you want bulk. Want details ",
+      "timestamp": 1771130535904
+    },
+    {
+      "pattern": "Go to Google and search for Phil's coffee. Then navigate to their website or Google Maps page and lo",
+      "steps": "Alright, I had to cut it short but here's what I found so far.",
+      "timestamp": 1771131907639
+    },
+    {
+      "pattern": "Search Google Images for \"San Jose State University campus\" and \"Sacramento State University campus\"",
+      "steps": "**Which looks better?** That really depends on what you're looking for! If you want that classic college atmosphere with lots of greenery and a true campus vibe, **Sacramento State takes the win**—it'",
+      "timestamp": 1771132152624
+    },
+    {
+      "pattern": "Search Google for computer science program comparison between San Jose State University and Sacramen",
+      "steps": "SJSU ranked #117 nationally for CS with Silicon Valley networking—best for Big Tech careers. Sacramento State (3.76/5 rating) offers ABET-accredited CS, smaller classes, and a beautiful nature-rich ca",
+      "timestamp": 1771132268855
+    },
+    {
+      "pattern": "On Google Maps, look at the photo gallery for A.M. Craft (4.8 stars, 481 E San Carlos St). Read and ",
+      "steps": "Stopped.",
+      "timestamp": 1771132470402
+    },
+    {
+      "pattern": "Search Google Images for \"San Jose State University campus\" and \"Stanford University campus\". Show m",
+      "steps": "Stanford campus is a sprawling, nature-rich suburban setting with iconic red-tile architecture and hiking trails—classically beautiful. SJSU is urban and downtown-integrated with historic and modern m",
+      "timestamp": 1771132858838
+    },
+    {
+      "pattern": "Search Google Images for \"Stanford University campus\" and \"San Jose State University campus\". Show m",
+      "steps": "Alright, I've pulled up both campus image searches. Here's what I can see visually comparing the two:\n\n**Stanford University** — The images show this sprawling, suburban campus with classic red-tile r",
+      "timestamp": 1771133427283
     }
   ],
   "browserbase_context_id": "516063f0-6075-4671-8242-74024ab22df7",

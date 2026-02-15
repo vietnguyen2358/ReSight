@@ -1,6 +1,6 @@
 # ReSite Sample Conversation Flows
 
-Reference conversations showing how ReSite handles real browsing tasks for visually impaired users. Each flow demonstrates the full pipeline: user voice input → orchestrator → navigator (with Stagehand browser automation) → conversational narration → spoken response via ElevenLabs.
+Reference conversations showing how ReSite handles real browsing tasks for visually impaired users. Each flow demonstrates the full pipeline: user voice input → Groq Whisper STT → orchestrator → navigator (with Stagehand browser automation) → conversational narration → spoken response via TTS (ElevenLabs if configured, Deepgram fallback). During processing, Narrator thoughts are spoken aloud as progress updates so the user always knows what's happening.
 
 These are written as if they ran through the live app with Browserbase/Stagehand.
 
