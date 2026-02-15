@@ -2,6 +2,28 @@ import { getStagehand } from "./session";
 import { setLatestScreenshot } from "./screenshot";
 import { devLog } from "@/lib/dev-logger";
 
+/** Check the global abort flag (same globalThis flag used by cancellation.ts). */
+function isAborted(): boolean {
+  return (globalThis as unknown as { __resightAbort?: boolean }).__resightAbort === true;
+}
+
+/** Race a promise against the global abort flag. Checks every 500ms. */
+function withAbortCheck<T>(promise: Promise<T>, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      const id = setInterval(() => {
+        if (isAborted()) {
+          clearInterval(id);
+          reject(new Error(`${label} aborted by new instruction`));
+        }
+      }, 500);
+      // Clean up interval when original promise settles
+      promise.finally(() => clearInterval(id));
+    }),
+  ]);
+}
+
 // ════════════════════════════════════════════════════════════════════════════════
 // PLAYWRIGHT DIRECT — deterministic, fast, no LLM
 // ════════════════════════════════════════════════════════════════════════════════
@@ -20,9 +42,9 @@ export async function navigateTo(
   options?: { waitUntil?: "domcontentloaded" | "load" | "networkidle"; timeoutMs?: number }
 ) {
   const page = await getPage();
-  const { waitUntil = "domcontentloaded", timeoutMs = 15000 } = options ?? {};
+  const { waitUntil = "domcontentloaded", timeoutMs = 30000 } = options ?? {};
   devLog.info("navigation", `navigateTo: ${url}`);
-  await page.goto(url, { waitUntil, timeoutMs });
+  await withAbortCheck(page.goto(url, { waitUntil, timeoutMs }), "navigateTo");
 }
 
 /** Navigate the browser back one page. */
@@ -53,11 +75,16 @@ export async function waitFor(ms: number) {
   await page.waitForTimeout(ms);
 }
 
-/** Run a function in the browser page context. */
+/** Run a function in the browser page context, with a 10s timeout to avoid hangs on heavy SPAs. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function evaluateInPage<T>(fn: () => T): Promise<T> {
+export async function evaluateInPage<T>(fn: () => T, timeoutMs = 10000): Promise<T> {
   const page = await getPage();
-  return page.evaluate(fn);
+  return Promise.race([
+    page.evaluate(fn),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("evaluateInPage timed out")), timeoutMs)
+    ),
+  ]);
 }
 
 /** Take a screenshot, cache it, and return the base64 string. */
@@ -78,14 +105,14 @@ export async function takeScreenshot(): Promise<string> {
 export async function performAction(instruction: string) {
   const stagehand = await getStagehand();
   devLog.info("stagehand", `performAction: "${instruction}"`);
-  return stagehand.act(instruction);
+  return withAbortCheck(stagehand.act(instruction), "performAction");
 }
 
 /** Use Stagehand AI to extract structured data from the page. */
 export async function extractData(instruction: string) {
   const stagehand = await getStagehand();
   devLog.info("stagehand", `extractData: "${instruction}"`);
-  return stagehand.extract(instruction);
+  return withAbortCheck(stagehand.extract(instruction), "extractData");
 }
 
 /** Use Stagehand AI to observe interactive elements on the page. */

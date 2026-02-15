@@ -342,6 +342,74 @@ Shows the Guardian catching a dark pattern mid-checkout that a blind user would 
 
 ---
 
+### 14. Vision-Powered Comparison — SJSU vs Stanford Campus Architecture
+
+**Agents involved:** Orchestrator → Navigator (multi-site research) → Vision (screenshot analysis x2) → Navigator (comparison synthesis)
+
+This flow demonstrates the Vision agent analyzing screenshots of image-heavy content (Google Images) to describe and compare visual information that can't be extracted from text alone.
+
+**User:** "Compare SJSU's campus architecture versus Stanford's campus architecture"
+
+> **[Orchestrator]** This is a visual comparison task — routing to navigator with full instruction
+>
+> **[Navigator]** Searching Google Images for "SJSU campus architecture buildings"...
+>
+> **[Navigator]** Opening Google Images results page...
+>
+> **[Navigator → Vision]** Taking screenshot of SJSU campus architecture images...
+>
+> **[Vision]** Analyzing screenshot: I see a grid of images showing San Jose State University's campus. The architecture is a mix of mid-century modern and contemporary styles — lots of flat-roofed concrete buildings from the 1960s-70s alongside newer glass-and-steel structures. The Engineering Building has a blocky brutalist feel. Tower Hall stands out as the oldest and most iconic building with its Spanish Revival style and prominent clock tower. The Student Union looks recently renovated with a modern facade. Overall the campus feels urban and functional, integrated into downtown San Jose's city grid.
+>
+> **Narrator** *(thinking)*: Got a good picture of SJSU's campus style. Now let me check out Stanford's for comparison...
+>
+> **[Navigator]** Searching Google Images for "Stanford University campus architecture buildings"...
+>
+> **[Navigator]** Opening Google Images results page...
+>
+> **[Navigator → Vision]** Taking screenshot of Stanford campus architecture images...
+>
+> **[Vision]** Analyzing screenshot: Stanford's campus is dramatically different. The images show Romanesque Revival architecture with signature sandstone buildings, red tile roofs, and long arcaded corridors with rounded arches. The Main Quad and Memorial Church are the centerpieces — ornate, historic, with detailed mosaics and carved stonework. The Hoover Tower is a tall landmark visible across campus. Newer buildings like the Gates Computer Science building blend modern glass with the sandstone aesthetic. The campus is sprawling with wide open spaces, palm tree-lined paths, and manicured lawns between buildings.
+>
+> **Narrator** *(answer)*: Okay so these two campuses are really different architecturally! SJSU has more of an urban, mixed-era campus — you've got Tower Hall from the 1910s with its Spanish Revival clock tower, but most of the other buildings are mid-century modern, kinda boxy concrete from the 60s and 70s, mixed in with some sleek newer buildings. It feels like a city campus because it literally is — it's woven right into downtown San Jose. Stanford on the other hand is like a whole world unto itself — those famous sandstone buildings with red tile roofs and long arched corridors. It's all Romanesque Revival style, very cohesive and grand. Memorial Church has these incredible mosaics, and the whole campus is spread out with tons of open green space and palm trees everywhere. Basically SJSU is urban and functional, Stanford is sprawling and palatial. Want me to dig into any specific building or area?
+
+**Final spoken response:** "Okay so these two campuses are really different architecturally! SJSU has more of an urban, mixed-era campus — you've got Tower Hall from the 1910s with its Spanish Revival clock tower, but most of the other buildings are mid-century modern, kinda boxy concrete from the 60s and 70s, mixed in with some sleek newer buildings. It feels like a city campus because it literally is — it's woven right into downtown San Jose. Stanford on the other hand is like a whole world unto itself — those famous sandstone buildings with red tile roofs and long arched corridors. It's all Romanesque Revival style, very cohesive and grand. Memorial Church has these incredible mosaics, and the whole campus is spread out with tons of open green space and palm trees everywhere. Basically SJSU is urban and functional, Stanford is sprawling and palatial. Want me to dig into any specific building or area?"
+
+**Why this matters for blind users:** Architecture is inherently visual — you can't extract "sandstone with rounded arches" or "brutalist concrete" from a text snippet. The Vision agent analyzes actual images from Google Images, giving the blind user a rich description of what the campuses *look like*, not just what Wikipedia says about them. This is the kind of comparison a sighted friend would make by looking at photos together.
+
+---
+
+### 15. Visual Content Exploration — Reddit Post with Image
+
+**Agents involved:** Orchestrator → Navigator (browse + click) → Vision (image analysis) → Navigator (narration)
+
+This flow demonstrates navigating into a specific post, clicking on it, and using the Vision agent to describe an image that a blind user cannot see — the core "be their eyes" use case.
+
+**User:** "Go to Reddit, find the first post in the feed, click on it, and if there's an image tell me what it shows"
+
+> **[Navigator]** Going to reddit.com...
+>
+> **[Navigator → Vision]** Taking screenshot of Reddit homepage...
+>
+> **[Vision]** Analyzing screenshot: Reddit homepage showing the main feed. The top post is from r/mildlyinfuriating with the title "When your vacation starts with an iPhone notification that an unknown air tag has been traveling with you." It has a thumbnail showing what appears to be a phone screenshot.
+>
+> **Narrator** *(thinking)*: Alright I can see the Reddit feed — the top post looks interesting, let me click into it...
+>
+> **[Navigator]** Clicking on the first post in the feed...
+>
+> **[Navigator → Vision]** Taking screenshot of the post page...
+>
+> **[Vision]** Analyzing screenshot: The post shows a screenshot of an iPhone notification. The notification is from the "Find My" app and reads "AirTag Found Moving With You" with a map showing a travel route. The notification timestamp suggests the user discovered this at the start of their vacation. The map shows a route between two cities. The post has thousands of upvotes and the comments section is visible below.
+>
+> **[Navigator]** Extracting post details — title, author, upvotes, and comment highlights...
+>
+> **Narrator** *(answer)*: Okay so the top post on Reddit right now is from r/mildlyinfuriating and it's a good one. Someone posted a screenshot of their iPhone notification from the Find My app — it says "AirTag Found Moving With You," meaning someone planted an unknown AirTag tracker on them and they discovered it right as their vacation was starting. The image shows the actual iPhone alert with a map tracking where the AirTag has been traveling. It's got like 15,000 upvotes and people in the comments are a mix of creeped out and giving advice on how to disable unknown AirTags. Pretty unsettling stuff. Want me to read through some of the top comments?
+
+**Final spoken response:** "Okay so the top post on Reddit right now is from r/mildlyinfuriating and it's a good one. Someone posted a screenshot of their iPhone notification from the Find My app — it says 'AirTag Found Moving With You,' meaning someone planted an unknown AirTag tracker on them and they discovered it right as their vacation was starting. The image shows the actual iPhone alert with a map tracking where the AirTag has been traveling. It's got like 15,000 upvotes and people in the comments are a mix of creeped out and giving advice on how to disable unknown AirTags. Pretty unsettling stuff. Want me to read through some of the top comments?"
+
+**Why this matters for blind users:** Reddit is full of image posts — memes, screenshots, photos — that are completely invisible to screen readers. The Vision agent sees the actual image content and describes it naturally, turning a visual-first platform into something a blind user can fully participate in. Without this, they'd only get "image post" with no idea what everyone is reacting to.
+
+---
+
 ## Conversation Patterns to Notice
 
 Across all flows, the conversational style follows these patterns:

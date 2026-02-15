@@ -578,16 +578,14 @@ export async function navigatorAgent(
       return stagePrefix + phaseMsg;
     };
 
-    const KEEPALIVE_MS = [5000, 15000, 30000];
-    const keepaliveIds: ReturnType<typeof setTimeout>[] = [];
-    KEEPALIVE_MS.forEach((ms, i) => {
-      const id = setTimeout(() => {
-        if (forceStopReason) return;
-        statusThought(getKeepaliveMessage(i as 0 | 1 | 2));
-      }, ms);
-      keepaliveIds.push(id);
-    });
-    const clearKeepalive = () => keepaliveIds.forEach((id) => clearTimeout(id));
+    let keepaliveStage = 0;
+    const keepaliveId = setInterval(() => {
+      if (forceStopReason) return;
+      const stage = Math.min(keepaliveStage, 2) as 0 | 1 | 2;
+      statusThought(getKeepaliveMessage(stage));
+      keepaliveStage++;
+    }, 10000);
+    const clearKeepalive = () => clearInterval(keepaliveId);
 
     let text: string | undefined;
     let steps: unknown;
