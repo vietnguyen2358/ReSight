@@ -9,7 +9,7 @@ import { thoughtEmitter } from "@/lib/thought-stream/emitter";
 import { devLog } from "@/lib/dev-logger";
 import { clearAbort, abortActiveTask, registerOrchestratorController, clearOrchestratorController } from "./cancellation";
 import { hasPendingQuestion, answerQuestion } from "./clarification";
-import { goBack, waitFor, takeScreenshot, getPageTitle } from "@/lib/stagehand/browser";
+import { goBack, waitFor, takeScreenshot, getPageTitle, getCurrentUrl } from "@/lib/stagehand/browser";
 import type { AgentResult } from "./types";
 
 function getModel() {
@@ -64,6 +64,11 @@ You MUST call the navigate tool for ANY user request that involves the web. NEVE
 - Do NOT give disclaimers about payment info, account requirements, or security.
 - If you need info (flavor, size), ask in ONE quick question: "What flavor — vanilla, chocolate?" not a long explanation.
 - If the user already confirmed in the conversation history, proceed without asking again.
+
+## Current page awareness
+- You receive the current browser page URL and title in the prompt. Use this context!
+- If the user asks "what page am I on" or "describe this page", call navigate with their request — the navigator can see the page and describe it.
+- If the user references "this page" or "this site", you know what they mean from the current page context.
 
 ## Conversation history
 - You receive prior messages. Use them! If the user said "vanilla, 1 pound" earlier, remember that.
@@ -167,7 +172,20 @@ export async function runOrchestrator(
     ).join("\n");
   }
 
-  const prompt = `User preferences: ${JSON.stringify(userContext)}${historyBlock}\n\nUser says: "${instruction}"`;
+  // Fetch current browser page context so the LLM knows where we are
+  let pageContextBlock = "";
+  try {
+    const currentUrl = await getCurrentUrl();
+    if (currentUrl && currentUrl !== "about:blank") {
+      const currentTitle = await getPageTitle();
+      pageContextBlock = `\nCurrent browser page: "${currentTitle || "Untitled"}" (${currentUrl})`;
+      devLog.debug("orchestrator", `Page context: ${currentTitle} — ${currentUrl}`);
+    }
+  } catch {
+    // No active page yet — that's fine
+  }
+
+  const prompt = `User preferences: ${JSON.stringify(userContext)}${historyBlock}${pageContextBlock}\n\nUser says: "${instruction}"`;
   const done = devLog.time("llm", "Orchestrator generateText call", {
     system: ORCHESTRATOR_SYSTEM.substring(0, 200) + "...",
     prompt,
@@ -252,7 +270,7 @@ export async function runOrchestrator(
     );
     if (!hasToolExecution) {
       // Only skip navigator for pure conversational messages (greetings, thanks, etc.)
-      const looksLikeBrowsing = /\b(find|search|open|go to|buy|check|get|look up|navigate|browse|compare|directions|restaurant|product|price|event|form|dmv|appointment|website|link|url|show|watch|play|video|youtube|read|tell me|what is|what are|how to|where|order|add to cart|recipe|news|weather|map)\b|https?:\/\//i.test(instruction);
+      const looksLikeBrowsing = /\b(find|search|open|go to|buy|check|get|look up|navigate|browse|compare|directions|restaurant|product|price|event|form|dmv|appointment|website|link|url|show|watch|play|video|youtube|read|tell me|what is|what are|how to|where|order|add to cart|recipe|news|weather|map|describe|page|screen|see|click|scroll|this)\b|https?:\/\//i.test(instruction);
       if (!looksLikeBrowsing && text?.trim()) {
         devLog.info("orchestrator", "No tools called, instruction not browsing — returning LLM response");
         return { success: true, message: polishForVoice(text), confirmationRequired: false };
