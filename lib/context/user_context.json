@@ -1,66 +1,6 @@
 {
   "_learned_flows": [
     {
-      "pattern": "find me the best boba place in san jose and the price of their thai tea",
-      "steps": "I found the best boba place in San Jose for you! It's **Boba Bliss** located at 1671 N Capitol Ave, with an impressive 4.8-star rating out of 68 reviews. Customers rave about their \"top tier vibes, ki",
-      "timestamp": 1771098830833
-    },
-    {
-      "pattern": "find the best boba spot in sf and their thai tea price",
-      "steps": "Great! I found the search results for By Me Boba Tea's Thai tea price. I can see their location at 22 Ross Alley in San Francisco with a 4.7 star rating. The Grubhub menu link shows Thai tea for $6.75",
-      "timestamp": 1771099406034
-    },
-    {
-      "pattern": "find me the best boba spot in sf and their thai tea price",
-      "steps": "I found detailed information about By Me Boba Tea on Google. The page shows it's a 4.7-star rated bubble tea store at 22 Ross Alley in San Francisco. I can see mentions of their menu and pricing from ",
-      "timestamp": 1771101911889
-    },
-    {
-      "pattern": "Find the best boba spot in San Francisco and their Thai tea price. Look for a highly rated boba tea ",
-      "steps": "Great! I found detailed pricing information for QualiTea in San Francisco. The search results show QualiTea is located at 4023 18th St in San Francisco with 4.7-4.9 star ratings. The Thai Tea is price",
-      "timestamp": 1771102193842
-    },
-    {
-      "pattern": "Find me the best boba spot in San Francisco and their Thai tea price",
-      "steps": "I found the best boba spot in San Francisco for you! **QualiTea** at 4023 18th St is the top-rated Thai Tea Boba shop in San Francisco. It has great reviews and their **Thai Tea is priced at $6.75** (",
-      "timestamp": 1771102467581
-    },
-    {
-      "pattern": "Find me the best boba spot in Palo Alto and their prices",
-      "steps": "Stopped.",
-      "timestamp": 1771109228924
-    },
-    {
-      "pattern": "find me the best boba spot in palo alto and their prices",
-      "steps": "I found the best boba spots in Palo Alto for you! **Molly Tea** is the top-rated option with drinks ranging from $7.50–$9.00, featuring premium jasmine teas and specialty drinks like Snowy Peach Oolon",
-      "timestamp": 1771108612965
-    },
-    {
-      "pattern": "Search for Molly Tea in Palo Alto on DoorDash and show me their menu so I can help the user place an",
-      "steps": "I see that DoorDash is blocking automated access. But here's the good news — I already have detailed menu information from the Google search results! Let me give you what I found:\n\n**Molly Tea in Palo",
-      "timestamp": 1771107972093
-    },
-    {
-      "pattern": "Open DoorDash and search for Molly Tea in Palo Alto, then show me their menu so I can help the user ",
-      "steps": "It looks like DoorDash might not have Molly Tea available or it's not showing up in their search. Let me check their website directly instead. Based on the Google search results I found earlier, I alr",
-      "timestamp": 1771109331716
-    },
-    {
-      "pattern": "Open DoorDash and search for Molly Tea in Palo Alto, then show me their full menu so I can help the ",
-      "steps": "Stopped.",
-      "timestamp": 1771109548727
-    },
-    {
-      "pattern": "Go to Amazon and search for vanilla protein powder 1 pound. Find the top-rated options and show me t",
-      "steps": "Perfect! I found the top vanilla protein powder options on Amazon for you. Here are the best-rated choices:\n\n**Top Picks:**\n\n1. **Optimum Nutrition Gold Standard 100% Whey Protein Powder, Vanilla Ice ",
-      "timestamp": 1771109872228
-    },
-    {
-      "pattern": "On Amazon, search for vanilla protein powder 1 pound. Find a highly-rated vanilla protein powder in ",
-      "steps": "Stopped.",
-      "timestamp": 1771112161591
-    },
-    {
       "pattern": "On Amazon, add the Optimum Nutrition Gold Standard 100% Whey Protein Powder in Vanilla Ice Cream fla",
       "steps": "I see you didn't respond. Since you didn't provide login credentials, I can't complete the full checkout process. However, I've successfully found the product and would've added it to your cart once l",
       "timestamp": 1771112472137
@@ -99,7 +39,69 @@
       "pattern": "Go to Amazon, log in with the email vietnguyen2358@gmail.com and complete the checkout for the Optim",
       "steps": "I understand you want to stop. Let me summarize where we are:\n\nYou're on the Amazon sign-in page with your email vietnguyen2358@gmail.com already entered. To complete the checkout for the **Optimum Nu",
       "timestamp": 1771113557666
+    },
+    {
+      "pattern": "On Amazon, click the \"Sign in with Google\" button if available, or go to the sign-in page. Use the e",
+      "steps": "Stopped.",
+      "timestamp": 1771114969288
+    },
+    {
+      "pattern": "Go to Amazon and create a new account with the email resite1234@gmail.com and password treehacks2026",
+      "steps": "Good! Now let me click on the password field and enter the password:",
+      "timestamp": 1771115247533
+    },
+    {
+      "pattern": "Go to Google.com, click sign in, enter the email resite1234@gmail.com and password treehacks2026!, t",
+      "steps": "I see you're on the Amazon registration page. The page is asking you to enable cookies and shows a sign-up form. Let me help you create a new account.\n\nBefore I proceed, I need to confirm: **Do you wa",
+      "timestamp": 1771115294546
+    },
+    {
+      "pattern": "Go to google.com in a new tab. Sign in with email resite1234@gmail.com and password treehacks2026!. ",
+      "steps": "Done! I've successfully signed into Google with resite1234@gmail.com and navigated to Gmail. Your inbox is ready to go, and you're all logged in. You can now compose emails, check your inbox, and acce",
+      "timestamp": 1771115394187
+    },
+    {
+      "pattern": "You're already in Gmail with the user logged in as resite1234@gmail.com. Open the inbox view so the ",
+      "steps": "Alright, I'm ready to help! To compose a new email, I'll need a couple of quick details:\n\n1. **Who do you want to send the email to?** (their email address)\n2. **What should the subject be?**\n3. **Wha",
+      "timestamp": 1771115453537
+    },
+    {
+      "pattern": "I'm in Gmail inbox. Click the compose button to start a new email to nicholasl.le224@gmail.com",
+      "steps": "Perfect! I've successfully opened the compose window and entered the recipient email address nicholasl.le224@gmail.com. The form is now ready for you to add a subject line and message body. What would",
+      "timestamp": 1771115519265
+    },
+    {
+      "pattern": "You're in Gmail compose with nicholasl.le224@gmail.com as the recipient. Add the subject \"greetings ",
+      "steps": "Done! I've successfully sent your email to nicholasl.le224@gmail.com with the subject \"greetings from Resite\" and your hello message. The email went through and you got a confirmation.",
+      "timestamp": 1771115613029
+    },
+    {
+      "pattern": "Open Gmail and show me the inbox for resite1234@gmail.com",
+      "steps": "I see. Google couldn't verify the account and is showing a message that says \"Google couldn't verify this account belongs to you. Try again later or use Account Recovery for help.\"\n\nUnfortunately, Goo",
+      "timestamp": 1771116156961
+    },
+    {
+      "pattern": "Open treehacks.com in the browser",
+      "steps": "I'm ready to help! What would you like me to do? \n\nI can search for anything on Google, browse Amazon, check out local spots, or help you with pretty much any site. Just let me know what you're lookin",
+      "timestamp": 1771118496948
+    },
+    {
+      "pattern": "On treehacks.com, scroll down to find and tell me about the sponsors section. Read me the sponsor na",
+      "steps": "I had to stop early (Loop: action \"scroll down\" repeated 6 times). Here's what I found so far on the page.",
+      "timestamp": 1771118203903
+    },
+    {
+      "pattern": "On treehacks.com, scroll down and read me the hackathon information. Tell me what TreeHacks is about",
+      "steps": "I'm ready to help! You're starting fresh with a blank page. What would you like me to do?\n\nWhether it's searching for something on Google, browsing Amazon, checking out a website, or finding local inf",
+      "timestamp": 1771118518130
+    },
+    {
+      "pattern": "Go to treehacks.com and tell me about the hackathon. What is TreeHacks, when is it happening, where ",
+      "steps": "Perfect! I've got the scoop on TreeHacks for you.\n\n**Here's what TreeHacks is all about:**\n\nTreeHacks is Stanford's premier hackathon—their 12th year running. It's a 36-hour event where they fly in 1,",
+      "timestamp": 1771118537370
     }
   ],
-  "browserbase_context_id": "516063f0-6075-4671-8242-74024ab22df7"
+  "browserbase_context_id": "516063f0-6075-4671-8242-74024ab22df7",
+  "amazon_email": "resite1234@gmail.com",
+  "google_email": "resite1234@gmail.com"
 }

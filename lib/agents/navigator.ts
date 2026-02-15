@@ -8,6 +8,7 @@ import { devLog } from "@/lib/dev-logger";
 import { getLearnedFlows } from "./scribe";
 import { isAborted, setLastUrl, registerNavigatorController, clearNavigatorController } from "./cancellation";
 import { askQuestion } from "./clarification";
+import { describeScreenshot } from "./vision";
 import type { SendThoughtFn, AgentResult } from "./types";
 
 function getModel() {
@@ -570,9 +571,9 @@ export async function navigatorAgent(
               sendThought("Narrator", "The page is loading a bit slowly, but I'll keep going...", "thinking");
             }
 
-            // Wait for page to settle / captcha solver to work
-            await page.waitForTimeout(6000);
-            await captureScreenshot(page);
+            // Wait for page to settle (reduced from 6s — captcha retry has its own wait)
+            await page.waitForTimeout(2000);
+            let latestScreenshot = await captureScreenshot(page);
 
             const pageTitle = await page.title().catch(() => fullUrl);
 
@@ -584,7 +585,7 @@ export async function navigatorAgent(
             if (blockType) {
               devLog.info("navigator", `Bot block detected (${blockType}), waiting longer for captcha solver...`);
               await page.waitForTimeout(6000); // extra wait for captcha solver
-              await captureScreenshot(page);
+              latestScreenshot = await captureScreenshot(page);
               ctx = await getPageContext(page);
               blockType = detectBotBlock(String(ctx.pageContent || ""), String(ctx.pageTitle || ""));
             }
@@ -615,11 +616,20 @@ export async function navigatorAgent(
             const contentLoop = trackContent(String(ctx.pageContent || ""));
             if (contentLoop) return { ...ctx, error: contentLoop };
 
+            // Get visual description (uses already-captured screenshot)
+            let visualDescription = "";
+            try {
+              if (latestScreenshot) {
+                visualDescription = await describeScreenshot(latestScreenshot, instruction);
+              }
+            } catch { /* vision is best-effort */ }
+
             devLog.info("navigator", `[Step ${stepNumber}] goto_url complete`, {
               finalUrl: ctx.currentUrl,
               pageTitle: ctx.pageTitle,
+              hasVisualDesc: !!visualDescription,
             });
-            return ctx;
+            return { ...ctx, visualDescription };
           },
         }),
 
@@ -668,8 +678,8 @@ export async function navigatorAgent(
               return { ...errCtx, error: msg };
             }
 
-            await page.waitForTimeout(2000);
-            await captureScreenshot(page);
+            await page.waitForTimeout(1000);
+            const actionScreenshot = await captureScreenshot(page);
 
             const ctx = await getPageContext(page);
 
@@ -680,11 +690,20 @@ export async function navigatorAgent(
               return { ...ctx, error: contentLoop };
             }
 
+            // Get visual description (uses already-captured screenshot)
+            let visualDescription = "";
+            try {
+              if (actionScreenshot) {
+                visualDescription = await describeScreenshot(actionScreenshot, instruction);
+              }
+            } catch { /* vision is best-effort */ }
+
             devLog.info("navigator", `[Step ${stepNumber}] do_action complete`, {
               currentUrl: ctx.currentUrl,
               pageTitle: ctx.pageTitle,
+              hasVisualDesc: !!visualDescription,
             });
-            return ctx;
+            return { ...ctx, visualDescription };
           },
         }),
 
