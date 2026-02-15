@@ -2,6 +2,7 @@
 
 import GideonSphere from "./GideonSphere";
 import ChatPanel from "./ChatPanel";
+import AgentGraph from "./AgentGraph";
 import SpeakButton from "./SpeakButton";
 import VoiceManager from "@/components/voice/VoiceManager";
 import { useGideon } from "@/components/providers/GideonProvider";
@@ -37,12 +38,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dotClass: st
   },
 };
 
-const AGENTS = [
-  { letter: "O", name: "Orchestrator" },
-  { letter: "N", name: "Navigator" },
-  { letter: "S", name: "Scribe" },
-  { letter: "G", name: "Guardian" },
-];
 
 export default function MindPane() {
   const { status } = useGideon();
@@ -168,38 +163,6 @@ export default function MindPane() {
             </div>
           </div>
 
-          {/* Agent council */}
-          <div className="flex-none flex items-center gap-1.5">
-            {AGENTS.map((agent, i) => {
-              const isAgentActive = status === "thinking" && i < 2;
-              return (
-                <div
-                  key={agent.letter}
-                  className="w-6 h-6 flex items-center justify-center rounded-md text-[9px] font-semibold transition-all duration-500"
-                  style={{
-                    fontFamily: "var(--font-display)",
-                    background: isAgentActive
-                      ? "rgba(0,229,255,0.08)"
-                      : "rgba(255,255,255,0.02)",
-                    border: `1px solid ${
-                      isAgentActive
-                        ? "rgba(0,229,255,0.25)"
-                        : "rgba(255,255,255,0.04)"
-                    }`,
-                    color: isAgentActive
-                      ? "var(--color-resite-cyan)"
-                      : "var(--color-resite-muted)",
-                    boxShadow: isAgentActive
-                      ? "0 0 10px rgba(0,229,255,0.08)"
-                      : "none",
-                  }}
-                  title={agent.name}
-                >
-                  {agent.letter}
-                </div>
-              );
-            })}
-          </div>
         </div>
 
         {/* Bottom border */}
@@ -210,6 +173,11 @@ export default function MindPane() {
               "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 20%, rgba(255,255,255,0.06) 80%, transparent 100%)",
           }}
         />
+      </div>
+
+      {/* ── Agent Graph ── */}
+      <div className="flex-none relative z-10">
+        <AgentGraph />
       </div>
 
       {/* ── Main Content ── */}

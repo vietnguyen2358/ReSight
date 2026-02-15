@@ -1,11 +1,6 @@
 {
   "_learned_flows": [
     {
-      "pattern": "On Amazon, add the Optimum Nutrition Gold Standard 100% Whey Protein Powder in Vanilla Ice Cream fla",
-      "steps": "I see you didn't respond. Since you didn't provide login credentials, I can't complete the full checkout process. However, I've successfully found the product and would've added it to your cart once l",
-      "timestamp": 1771112472137
-    },
-    {
       "pattern": "Go to Amazon, log in with the email vietnguyen2358@gmail.com, search for \"Optimum Nutrition Gold Sta",
       "steps": "I need your password to log in and complete the checkout. Could you provide your Amazon password?",
       "timestamp": 1771112561637
@@ -99,6 +94,11 @@
       "pattern": "Go to treehacks.com and tell me about the hackathon. What is TreeHacks, when is it happening, where ",
       "steps": "Perfect! I've got the scoop on TreeHacks for you.\n\n**Here's what TreeHacks is all about:**\n\nTreeHacks is Stanford's premier hackathon—their 12th year running. It's a 36-hour event where they fly in 1,",
       "timestamp": 1771118537370
+    },
+    {
+      "pattern": "Go to treehacks.com and find the speakers or keynote speakers for TreeHacks 2026. Tell me who's spea",
+      "steps": "Perfect! I found the speakers section. Here's what I can tell you:\n\nThe keynote speakers section says **\"Speakers to be announced.\"** They're asking people to check back for updates from TreeHacks Mis",
+      "timestamp": 1771120928151
     }
   ],
   "browserbase_context_id": "516063f0-6075-4671-8242-74024ab22df7",

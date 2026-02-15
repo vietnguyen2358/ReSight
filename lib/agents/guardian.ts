@@ -2,30 +2,51 @@ import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import type { SendThoughtFn, AgentResult } from "./types";
 
-const GUARDIAN_SYSTEM = `You are the Guardian agent. You protect blind users from dark patterns and scams, but you do NOT get in the way of legitimate purchases the user has asked for.
+const GUARDIAN_SYSTEM = `You are the Guardian agent for ReSite, a browser for BLIND users. Your job is critical — blind users cannot visually inspect URLs, page layouts, or red flags that sighted users catch instantly. You are their eyes for safety.
 
 Respond with JSON:
-{ "safe": boolean, "reason": string, "confirmationRequired": boolean }
+{ "safe": boolean, "reason": string, "confirmationRequired": boolean, "threatType": string }
 
-SAFE (safe:true, confirmationRequired:false):
-- User explicitly asked to buy/order something — they already consented
-- Normal shopping actions: searching, browsing, adding to cart, checkout
+threatType values: "none", "phishing", "scam", "dark_pattern", "data_harvesting", "malware", "sketchy_url", "fake_urgency", "unknown_risk"
+
+## SAFE (safe:true, confirmationRequired:false)
+- User explicitly asked to buy/order something — that's consent
+- Normal shopping on known retailers (Amazon, Target, Walmart, Best Buy, etc.)
 - Entering login credentials the user volunteered
-- Routine web browsing
+- Routine web browsing on known sites
+- Standard cookie consent banners
 
-NEEDS ONE CONFIRMATION (safe:true, confirmationRequired:true):
+## NEEDS CONFIRMATION (safe:true, confirmationRequired:true)
 - Subscriptions with recurring charges
-- Downloading executable files
-- Entering payment info on a site the user didn't specifically ask to use
+- Downloading files (.exe, .dmg, .apk, .zip from unknown sources)
+- Entering payment info on a site the user didn't specifically request
+- Unknown/unfamiliar e-commerce sites (check: no HTTPS, recently registered domain, no reviews)
+- Price significantly below market (>50% cheaper than major retailers = suspicious)
+- Sites requesting unnecessary personal information (SSN, full DOB for a simple purchase)
 
-BLOCK (safe:false):
-- Clear dark patterns: hidden fees, pre-checked boxes adding unwanted services, misleading "free trial" that auto-charges
-- Phishing or suspicious sites
-- Actions the user clearly did NOT ask for
+## BLOCK (safe:false)
+- **Shortened/obfuscated URLs**: bit.ly, tinyurl, t.co, goo.gl etc. with suspicious keywords ("free", "prize", "winner", "urgent", "claim")
+- **Phishing patterns**: misspelled domains (amaz0n.com, g00gle.com), login pages on wrong domains, "verify your account" on non-official sites
+- **Scam indicators**: "You've won!", "Congratulations!", countdown timers with "Act now!", fake virus warnings, "your computer is infected"
+- **Dark patterns**: hidden fees revealed at checkout, pre-checked boxes adding unwanted services, misleading "free trial" that auto-charges, "negative option" designs where declining is hidden
+- **Data harvesting**: forms asking for SSN/credit card/bank info that shouldn't need it, surveys that want extensive personal data
+- **Malware risk**: prompts to install browser extensions, Flash/Java updates, "driver updates", executable downloads from unknown sources
+- **Fake reviews/listings**: impossibly high review counts on unknown products, all reviews from same date, listing price mismatches
 
-IMPORTANT: If the user said "order this" or "buy this" or "add to cart" — that IS their consent. Do NOT block or require confirmation for purchases the user requested. Be concise.`;
+## CRITICAL RULES
+- If the user said "order this" or "buy this" — that IS consent. Don't block legitimate purchases.
+- When blocking, explain WHY in plain language a blind person can understand. They can't see the red flags — describe them.
+- Be concise. 1-2 sentences for reason.
+- Err on the side of caution for blind users — they literally cannot see visual scam cues that sighted users spot instantly. A false positive (blocking something safe) is better than letting a scam through.`;
 
-function parseGuardianResponse(text: string): { safe: boolean; reason: string; confirmationRequired: boolean } {
+interface GuardianAnalysis {
+  safe: boolean;
+  reason: string;
+  confirmationRequired: boolean;
+  threatType?: string;
+}
+
+function parseGuardianResponse(text: string): GuardianAnalysis {
   // Strip markdown code fences if present (Gemini often wraps JSON in ```json ... ```)
   let cleaned = text.trim();
   cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
@@ -38,7 +59,7 @@ function parseGuardianResponse(text: string): { safe: boolean; reason: string; c
     const match = cleaned.match(/\{[\s\S]*\}/);
     if (match) return JSON.parse(match[0]);
     // If all parsing fails, default to safe with confirmation
-    return { safe: true, reason: "Could not parse safety analysis", confirmationRequired: true };
+    return { safe: true, reason: "Could not parse safety analysis", confirmationRequired: true, threatType: "unknown_risk" };
   }
 }
 
@@ -64,27 +85,30 @@ export async function guardianAgent(
     });
 
     const analysis = parseGuardianResponse(text);
-    const { safe, reason, confirmationRequired } = analysis;
+    const { safe, reason, confirmationRequired, threatType } = analysis;
 
     if (!safe) {
-      sendThought("Guardian", `BLOCKED: ${reason}`);
+      const threatLabel = threatType && threatType !== "none" ? ` [${threatType}]` : "";
+      sendThought("Guardian", `BLOCKED${threatLabel}: ${reason}`);
       return {
         success: false,
-        message: `Action blocked: ${reason}`,
+        message: reason,
         confirmationRequired: true,
+        data: { threatType: threatType || "unknown_risk" },
       };
     }
 
     if (confirmationRequired) {
-      sendThought("Guardian", `Confirmation needed: ${reason}`);
+      sendThought("Guardian", `Heads up — ${reason}`);
       return {
         success: true,
         message: reason,
         confirmationRequired: true,
+        data: { threatType: threatType || "unknown_risk" },
       };
     }
 
-    sendThought("Guardian", "Action approved — safe to proceed");
+    sendThought("Guardian", "Looks safe — good to go");
     return {
       success: true,
       message: "Action approved",

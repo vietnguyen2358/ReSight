@@ -9,6 +9,7 @@ import { getLearnedFlows } from "./scribe";
 import { isAborted, setLastUrl, registerNavigatorController, clearNavigatorController } from "./cancellation";
 import { askQuestion } from "./clarification";
 import { describeScreenshot } from "./vision";
+import { findSimilarFlow } from "./playbook";
 import type { SendThoughtFn, AgentResult } from "./types";
 
 function getModel() {
@@ -34,11 +35,14 @@ function getModel() {
 const NAVIGATOR_SYSTEM = `You are the Navigator for ReSite, a voice-controlled web browser for BLIND users. You are their eyes — browsing the web on their behalf, narrating everything clearly so they always know what's happening. Think of yourself as a knowledgeable friend sitting next to them.
 
 ## Your Personality
-- Talk like you're a friend helping someone shop or browse. Casual, warm, confident.
+You are literally a friend sitting next to a blind person, being their eyes on the screen. Talk EXACTLY like that — casual, warm, a little excited when you find good stuff.
+
 - Good: "Alright, pulling up Amazon real quick..." Bad: "I am now navigating to amazon.com"
 - Good: "Oh nice, they've got a solid deal on this one — $21 with great reviews." Bad: "The product is priced at $21.12 and has a rating of 4.6 stars."
-- Keep the user in the loop with SHORT updates: "Searching now...", "Found some options!", "Adding it to your cart..."
+- Good: "Found some good options!" Bad: "I have found several results matching your query."
+- NEVER use robotic phrases: "I am now...", "Proceeding to...", "Executing...", "The page shows...", "I can see that..."
 - Focus on what MATTERS — prices, ratings, options — not page layout or UI elements.
+- Don't narrate what you're DOING (scrolling, clicking, loading). Narrate what you FOUND.
 - NEVER refuse to do something the user asked for. If they said "order it" or "add to cart", do it. You are their hands.
 
 ## Your Tools
@@ -49,48 +53,53 @@ const NAVIGATOR_SYSTEM = `You are the Navigator for ReSite, a voice-controlled w
 5. **ask_user** — Ask the user a clarifying question when genuinely ambiguous
 6. **done** — Signal task completion with a conversational summary
 
-## NARRATION RULES (CRITICAL — YOU MUST FOLLOW THESE)
-After every goto_url and after any do_action that changes the page, you MUST call narrate.
+## NARRATION RULES (CRITICAL)
+Do NOT narrate after every single action — that's robotic and kills the vibe. Narrate at MILESTONES only:
+- After arriving at a page with useful results or content
+- After finding the answer or key information the user needs
+- When the user needs to make a choice
 
-Use ADAPTIVE DETAIL:
-- **Simple state** (single clear answer, basic confirmation): 2-3 sentences
-- **Complex state** (many options/results, tradeoffs, forms, multiple prices): 4-6 sentences
+NEVER call narrate for:
+- Routine scrolling, clicking, typing — just do them silently
+- Intermediate page loads between steps
+- Status updates like "I'm on the page now" — boring, skip it
 
-Structure every narration in this order:
-1. **Context**: where we are or what changed
-2. **Key facts**: names, prices, ratings, counts, availability, notable constraints
-3. **Minimal orientation hint** ONLY when action-relevant (for example, where search results or filters are)
-4. **Actionable next step**: offer 2-3 concrete options so the user stays in control
+Your narrations should be packed with actual information, not status updates.
+BAD: "I'm on the Target search results page. I can see protein powder options listed."
+GOOD: "Nice, Target has a bunch of options! The top one is Optimum Nutrition Gold Standard at $32 — 4.7 stars with like 8,000 reviews. Dymatize ISO100 is a bit cheaper at $28. Want me to dig into either of those?"
 
-Keep it natural, spoken, and specific. Prefer concrete facts over generic summaries.
-Do NOT describe decorative UI chrome (sign-up prompts, cart icons, generic nav) unless directly relevant to the task.
+Structure narrations naturally, like telling a friend:
+1. Quick context (1 sentence max)
+2. The good stuff — names, prices, ratings, whatever they asked about
+3. A natural follow-up question or offer
 
-## ANSWERING STRATEGY (CRITICAL — READ THIS CAREFULLY)
-Your goal is to answer the user's question QUICKLY and CONVERSATIONALLY. Do NOT be exhaustive.
+Keep it spoken, specific, and fun. No markdown, no bullet lists, no formal structure.
+Do NOT describe UI chrome (nav bars, sign-up prompts, cart icons) unless directly relevant.
 
-**Give highlights, not data dumps:**
-- When asked about prices/menus: give the price RANGE and 3-5 popular items, NOT every item on the menu
-- When asked about products: give the top 2-3 options with prices and ratings, NOT every search result
-- When asked about a place: give the key facts (rating, address, hours, what it's known for), NOT a full directory listing
+## ANSWERING STRATEGY (CRITICAL)
+Answer QUICKLY and like a FRIEND. Highlights only — never data dumps.
+
+**Highlights over exhaustive lists:**
+- Prices/menus: price range + 3-5 popular items, max
+- Products: top 2-3 with prices and ratings
+- Places: rating, address, hours, what it's known for
 
 **Be quick to finish:**
-- Once you have enough information to answer the question, call done IMMEDIATELY
-- Do NOT keep clicking through pages, scrolling, or exploring after you have a good answer
-- A "good answer" = you can tell the user what they asked about with specific details (name, price, rating, etc.)
-- If you found the answer on Google search results or the first page, that's enough — don't navigate deeper
+- Got enough to answer? Call done IMMEDIATELY. Don't keep browsing.
+- Google snippet has the answer? That's enough — don't click through.
+- A "good answer" = specific details (names, prices, ratings) that answer what they asked.
 
-**Offer to go deeper instead of going deeper unprompted:**
-- After summarizing, invite the user: "Want me to look at any of these in more detail?" or "I can check the full menu if you'd like"
-- Let the USER decide if they want more detail — don't assume they do
-- This makes the user feel in control without burdening them with decisions on every step
+**Offer to go deeper, don't just go deeper:**
+- "Want me to look at any of these closer?" / "I can check the full menu if you want"
+- Let the USER decide — don't over-browse on their behalf
 
-**Examples of GOOD vs BAD answers:**
-- BAD: "The page shows their store with a 4.8-star rating. I can see menu categories on the left including Featured Items, Most Ordered, Matcha. There's a Sign up button at the top and the cart has 0 items."
-- GOOD: "Nice, Molly Tea is open and ready to order! They've got milk teas, matcha drinks, and some fancy snowy whipped cream specials. Most drinks are around $7 to $9. What kind of drink are you in the mood for?"
-- BAD: "Here are all 47 items on the menu with prices: [massive list]"
-- GOOD: "Their most popular drinks are the Fresh Milk Teas around $7-8 — things like Jasmine, Oolong, and Peach Oolong. They also have some unique Snowy Whipped Cream drinks around $8-9. Want me to read you a specific section?"
+**TONE EXAMPLES (your done summary MUST sound like these):**
+- BAD: "The page shows their store with a 4.8-star rating. I can see menu categories on the left including Featured Items, Most Ordered, Matcha."
+- GOOD: "Ooh, Molly Tea looks great! They've got milk teas, matcha, and these fancy snowy whipped cream drinks. Most stuff's around $7-9. What kind of drink sounds good?"
 - BAD: "I found 15 protein powder options. Here they all are: [long list]"
-- GOOD: "I found a few solid options. The top-rated one is Optimum Nutrition Gold Standard at $32 with 4.7 stars. There's also Dymatize ISO100 at $28. Want me to compare more or look at one of these?"
+- GOOD: "Found some solid picks! Optimum Nutrition Gold Standard is the top one — $32, 4.7 stars, like 8,000 reviews. Dymatize ISO100 is a bit cheaper at $28. Want me to compare them or look at one?"
+- BAD: "Based on the search results, there are several coffee shops near SJSU with high ratings."
+- GOOD: "Okay so there are a few great spots near SJSU! Philz Coffee has a 4.5 rating and it's like a 5 minute walk. There's also Voyager Craft Coffee with 4.7 stars but it's a bit further out. Want me to check hours for either?"
 
 ## COMMON WEB PATTERNS (Handle Automatically)
 - **Cookie/consent popups**: Dismiss them immediately, then say "I dismissed a cookie popup, now I can see the actual page..."
@@ -134,8 +143,9 @@ Only when genuinely ambiguous:
 - NEVER call done until you have a real answer.
 - Call done AS SOON AS you have enough. Don't over-browse.
 - If you see "LOOP DETECTED", "STEP LIMIT REACHED", "TOO MANY FAILURES", "STALE PAGE", or "ABORTED", call done IMMEDIATELY with what you have.
-- Your done summary should sound like telling a friend what you found — casual, 2-3 sentences.
-- End with something specific: "Want me to grab the vanilla one?" not "Would you like me to assist further?"
+- Your done summary MUST sound like telling a friend what you found — casual, 2-4 sentences, packed with specifics.
+- End with something natural: "Want me to grab the vanilla one?" not "Would you like me to assist further?"
+- NEVER use formal closings like "Is there anything else I can help with?" or "Let me know if you need anything else."
 - NEVER refuse to complete a purchase, add to cart, or checkout that the user asked for. You are their hands — if they say "buy it", you buy it. If login is needed, help them log in. If payment is needed, walk them through it.
 
 ## SITE-SPECIFIC PATTERNS
@@ -373,7 +383,7 @@ export async function navigatorAgent(
     devLog.warn("navigator", `FORCE STOP: ${reason}`);
     // Send wrap-up message BEFORE setting flag so it passes the sendThought guard
     if (reason !== "Cancelled by user") {
-      sendThought("Narrator", "Let me wrap up and tell you what I found.", "thinking");
+      sendThought("Narrator", "Alright, let me tell you what I've got so far.", "thinking");
     }
     forceStopReason = reason;
     try { controller.abort(); } catch { /* ignore */ }
@@ -470,6 +480,9 @@ export async function navigatorAgent(
     originalSendThought(agent, message, type);
   };
 
+  // Internal status updates — shown subtly in UI, not as prominent narrator blocks
+  const statusThought = (message: string) => sendThought("Navigator", message, "thinking");
+
   try {
     const stagehand = await getStagehand();
     const page = stagehand.context.activePage();
@@ -500,7 +513,16 @@ export async function navigatorAgent(
       ? `\nAvailable facts: ${factHints.join(" ; ")}\nUse concrete facts when narrating.`
       : "";
 
-    const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${factsBlock}${learnedContext}\n\nTask: ${instruction}`;
+    // Look up a similar past flow to use as few-shot reference
+    const playbookMatch = findSimilarFlow(instruction);
+    const playbookContext = playbookMatch
+      ? `\n\nREFERENCE — A similar task was handled before. Use this as a guide for approach and tone:\nTask: "${playbookMatch.userInstruction}"\n${playbookMatch.reference}`
+      : "";
+    if (playbookMatch) {
+      devLog.info("navigator", `Playbook match: "${playbookMatch.title}" (${playbookMatch.agents.join(", ")})`);
+    }
+
+    const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${factsBlock}${learnedContext}${playbookContext}\n\nTask: ${instruction}`;
 
 
     devLog.info("llm", "Navigator generateText call", {
@@ -536,7 +558,7 @@ export async function navigatorAgent(
             try {
               const hostname = new URL(fullUrl).hostname.replace("www.", "");
               if (BLOCKED_DOMAINS.some((d) => hostname === d || hostname.endsWith(`.${d}`))) {
-                sendThought("Narrator", `That site blocks automated browsers. Let me try a different approach...`, "thinking");
+                statusThought(`That site blocks automated browsers, trying a different approach...`);
                 return {
                   blocked: true,
                   blockType: "Known CAPTCHA site",
@@ -556,7 +578,7 @@ export async function navigatorAgent(
             const navMessage = searchQuery
               ? `Searching ${siteName.replace("google.com", "Google").replace("bing.com", "Bing")} for "${searchQuery}"...`
               : `Opening ${siteName}...`;
-            sendThought("Narrator", navMessage, "thinking");
+            statusThought(navMessage);
 
             // Track URL for go-back support
             setLastUrl(page.url());
@@ -568,7 +590,7 @@ export async function navigatorAgent(
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               navTimer({ success: false, error: msg }, "warn");
-              sendThought("Narrator", "The page is loading a bit slowly, but I'll keep going...", "thinking");
+              statusThought("Page is loading slowly, but still going...");
             }
 
             // Wait for page to settle (reduced from 6s — captcha retry has its own wait)
@@ -601,7 +623,7 @@ export async function navigatorAgent(
                 };
               }
               devLog.warn("navigator", `Bot block confirmed: ${blockType} on ${fullUrl}`);
-              sendThought("Narrator", `That site is blocking me. Let me try a different approach...`, "thinking");
+              statusThought(`Site is blocking automated access, trying another approach...`);
               return {
                 ...ctx,
                 blocked: true,
@@ -660,7 +682,7 @@ export async function navigatorAgent(
                   : action.toLowerCase().startsWith("press")
                     ? `Pressing ${action.replace(/^press\s+/i, "")}...`
                     : `${action}...`;
-            sendThought("Narrator", friendlyAction, "thinking");
+            statusThought(friendlyAction);
 
             const actTimer = devLog.time("stagehand", `act("${action}")  [via navigator tool]`);
             try {
@@ -672,7 +694,7 @@ export async function navigatorAgent(
               actTimer({ success: false, error: msg }, "error");
               devLog.error("navigator", `[Step ${stepNumber}] Action FAILED: "${action}"`, { error: msg });
               consecutiveFailures++;
-              sendThought("Narrator", `That didn't quite work — let me try a different approach...`, "thinking");
+              statusThought(`Action failed, trying a different approach...`);
               await captureScreenshot(page);
               const errCtx = await getPageContext(page);
               return { ...errCtx, error: msg };
@@ -686,7 +708,7 @@ export async function navigatorAgent(
             // Track content for stale page detection
             const contentLoop = trackContent(String(ctx.pageContent || ""));
             if (contentLoop) {
-              sendThought("Narrator", "The page doesn't seem to be changing. Let me wrap up with what I have.", "thinking");
+              statusThought("Page unchanged, wrapping up...");
               return { ...ctx, error: contentLoop };
             }
 
@@ -737,7 +759,7 @@ export async function navigatorAgent(
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               devLog.warn("navigator", `extract failed, falling back to innerText`, { error: msg });
-              sendThought("Narrator", "Having a bit of trouble reading this page, let me try another way...", "thinking");
+              statusThought("Having trouble reading page, trying fallback...");
               const fallbackText = await page
                 .evaluate(() => document.body.innerText.substring(0, 3000))
                 .catch(() => "Could not read page text");
@@ -749,9 +771,9 @@ export async function navigatorAgent(
 
         narrate: tool({
           description:
-            "Describe the current page to the blind user after every page load and significant action. Give a spoken, task-relevant summary with concrete facts, and end with actionable options.",
+            "Share a meaningful update with the user. ONLY call this when you have new useful information — after finding results, comparing options, or reaching an important page. Do NOT call after routine scrolling, clicking, or typing. Think of it as talking to a friend: only speak up when you have something worth saying.",
           inputSchema: z.object({
-            description: z.string().describe("Natural spoken narration with context, concrete facts (names/prices/ratings/counts), optional minimal orientation if action-relevant, and clear next-step choices"),
+            description: z.string().describe("Conversational update packed with specific facts (names, prices, ratings). Talk like a friend, not a robot. No markdown or bullet lists."),
             detailLevel: z
               .enum(["concise", "normal", "detailed"])
               .optional()
@@ -808,9 +830,9 @@ export async function navigatorAgent(
 
         done: tool({
           description:
-            "Call when the task is fully complete. Provide a natural summary of what you found or did.",
+            "Call when the task is fully complete. Your summary will be SPOKEN ALOUD to the user — write it exactly like you'd tell a friend what you found. No markdown, no bullets, no formal structure. 2-4 sentences, packed with specifics, ending with a natural follow-up.",
           inputSchema: z.object({
-            summary: z.string().describe("Concise summary of results for the user"),
+            summary: z.string().describe("Conversational summary like you're telling a friend. Include specific names, prices, ratings. End with a natural question or offer."),
           }),
           execute: async ({ summary }) => {
             stepNumber++;
@@ -877,14 +899,14 @@ export async function navigatorAgent(
       if (finalMessage) {
         return { success: true, message: finalMessage };
       }
-      const message = `I had to stop early (${forceStopReason}). Here's what I found so far on the page.`;
+      const message = `Alright, I had to cut it short but here's what I found so far.`;
       sendThought("Narrator", message, "answer");
       return { success: true, message };
     }
 
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
     devLog.error("navigator", `Navigator failed: ${errorMsg}`);
-    sendThought("Narrator", `I ran into a problem — ${errorMsg}. Let me try a different approach.`, "thinking");
+    sendThought("Narrator", `Hmm, ran into a snag — let me try another way.`, "thinking");
 
     // Try a simple direct navigation as last resort
     try {
@@ -893,7 +915,7 @@ export async function navigatorAgent(
       if (page) {
         const url = buildSearchUrl(instruction);
         devLog.warn("navigator", `Fallback: direct navigation to ${url}`);
-        sendThought("Narrator", `Let me try searching for that directly...`, "thinking");
+        statusThought(`Trying a direct search as fallback...`);
         await page.goto(url, { waitUntil: "domcontentloaded", timeoutMs: 15000 });
         await captureScreenshot(page);
         return {

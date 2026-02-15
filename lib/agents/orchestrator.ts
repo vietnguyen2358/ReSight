@@ -38,15 +38,17 @@ const ORCHESTRATOR_SYSTEM = `You are ReSite, a chill, friendly voice assistant h
 ## What you can do
 1. **navigate** — Any web task. Pass the user's FULL request, including context from the conversation. The navigator does all the browsing.
 2. **remember** — Store/recall user preferences.
-3. **safety_check** — ONLY use for sketchy-looking sites, dark patterns, or scams. Do NOT use for normal purchases the user asked for.
+3. **safety_check** — Use when something seems off: suspicious/shortened URLs (bit.ly etc.), unknown sites, sketchy links someone sent the user, unusually cheap deals, download prompts, or pages asking for too much personal info. Do NOT use for normal purchases on known retailers.
 
 ## How to talk
-- SHORT responses. 1-3 sentences. No bullet lists. No numbered steps. No "Here's what I'll do" plans.
-- Be enthusiastic: "Ooh, good choice! Let me pull that up." / "Yeah totally, one sec!" / "Nice, on it!"
-- Talk like a friend: "On it! Any flavor preference?" not "Before I can place an order, I need to make sure you're comfortable with a few things."
-- After navigate returns, give the highlights conversationally. Don't repeat everything verbatim.
-- End with a natural question or offer: "Want me to grab the vanilla one?" not "Which option would you prefer?"
-- NEVER explain your process. Just DO things. Don't say "I'll search, then show you options, then add to cart." Just say "Let me find that for you."
+- SHORT. 1-3 sentences max. No bullet lists. No numbered steps. No "Here's what I'll do" plans.
+- You are literally a friend sitting next to a blind person, helping them browse. Talk EXACTLY like that.
+- Be warm and natural: "Ooh nice, let me pull that up!" / "Yeah totally, one sec!" / "Oh cool, found some good stuff!"
+- NEVER explain your process. Don't say "I'll search, then compare options." Just say "Lemme check that out."
+- NEVER use phrases like: "I am now...", "Proceeding to...", "I have found...", "Here is what I found:", "Based on my search..."
+- After navigate returns, give a quick conversational highlight — DON'T parrot the full navigator response. Rephrase it casually in 1-2 sentences.
+- End with something natural: "Want me to grab that?" / "Should I look at more options?" / "Which one sounds good?"
+- Your response will be SPOKEN ALOUD by a voice agent, so write exactly how you'd talk to a friend. No markdown, no formatting.
 
 ## Purchases & orders
 - When the user asks to buy/order something, JUST DO IT. Call navigate immediately.
@@ -65,6 +67,26 @@ function sendThought(agent: string, message: string, type?: "thinking" | "answer
   thoughtEmitter.sendThought(agent, message, type);
 }
 
+/** Strip markdown/bullets/formatting so the response sounds natural when spoken aloud */
+function polishForVoice(text: string): string {
+  let r = text;
+  // Remove markdown bold/italic/code
+  r = r.replace(/\*\*(.*?)\*\*/g, "$1");
+  r = r.replace(/\*(.*?)\*/g, "$1");
+  r = r.replace(/`(.*?)`/g, "$1");
+  // Remove markdown headers
+  r = r.replace(/^#+\s*/gm, "");
+  // Remove bullet points and numbered lists
+  r = r.replace(/^[\s]*[-•]\s*/gm, "");
+  r = r.replace(/^[\s]*\d+\.\s*/gm, "");
+  // Collapse newlines into spaces (spoken text doesn't have line breaks)
+  r = r.replace(/\n{2,}/g, " ");
+  r = r.replace(/\n/g, " ");
+  // Clean up multiple spaces
+  r = r.replace(/\s{2,}/g, " ");
+  return r.trim();
+}
+
 export async function runOrchestrator(
   instruction: string,
   history?: { role: string; text: string }[]
@@ -75,7 +97,7 @@ export async function runOrchestrator(
   // 1. If there's a pending clarification question, route the input as the answer
   if (hasPendingQuestion()) {
     devLog.info("orchestrator", `Routing as clarification answer: "${instruction}"`);
-    sendThought("Narrator", `Got it — passing your answer along...`, "thinking");
+    sendThought("Narrator", `Got it, passing that along!`, "thinking");
     answerQuestion(instruction.trim());
     return { success: true, message: "Got it, continuing with your answer." };
   }
@@ -84,14 +106,14 @@ export async function runOrchestrator(
   if (/\b(stop|cancel|wait|never\s*mind|halt|pause)\b/i.test(lower)) {
     devLog.info("orchestrator", `Stop command detected: "${instruction}"`);
     abortActiveTask(); // kills both orchestrator + navigator controllers
-    sendThought("Narrator", "Okay, stopping what I was doing.", "thinking");
-    return { success: true, message: "Okay, I've stopped." };
+    sendThought("Narrator", "Alright, stopping!", "thinking");
+    return { success: true, message: "Okay, stopped! What's next?" };
   }
 
   // 3. Go back command — navigate browser back
   if (/\b(go\s*back|back|undo|previous(\s*page)?)\b/i.test(lower)) {
     devLog.info("orchestrator", `Go back command detected`);
-    sendThought("Narrator", "Going back to the previous page...", "thinking");
+    sendThought("Narrator", "Going back!", "thinking");
     try {
       const stagehand = await getStagehand();
       const page = stagehand.context.activePage();
@@ -100,8 +122,8 @@ export async function runOrchestrator(
         await page.waitForTimeout(1500);
         await captureScreenshot(page);
         const title = await page.title().catch(() => page.url());
-        sendThought("Narrator", `Alright, I went back. We're now on "${title}".`, "thinking");
-        return { success: true, message: `Went back to ${title}.` };
+        sendThought("Narrator", `Alright, we're back on "${title}".`, "thinking");
+        return { success: true, message: `Cool, went back to ${title}. What do you wanna do?` };
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -186,24 +208,24 @@ export async function runOrchestrator(
           }),
           execute: async ({ action, key, value }) => {
             devLog.info("orchestrator", `Tool call: remember(${action}, ${key})`);
-            sendThought("Narrator", action === "store" ? `I'll remember that for you.` : `Let me check what I know about "${key}"...`, "thinking");
+            sendThought("Narrator", action === "store" ? `Got it, I'll remember that!` : `Let me think... what do I know about "${key}"...`, "thinking");
             return await scribeAgent(action, key, value, sendThought);
           },
         }),
         safety_check: tool({
           description:
-            "Check if an action is safe before proceeding. Use before purchases, downloads, or PII entry.",
+            "Check if a URL, site, or action is safe. Use for: suspicious/shortened links (bit.ly etc.), unknown websites, deals that seem too good to be true, download prompts, pages asking for personal info, or anything that feels off. Do NOT use for routine purchases on known retailers the user asked for.",
           inputSchema: z.object({
-            action: z.string().describe("The action to check"),
+            action: z.string().describe("The action or URL to check"),
             pageContext: z
               .string()
-              .describe("Current page context/description"),
+              .describe("Current page context/description, or the URL/link to evaluate"),
           }),
           execute: async ({ action, pageContext }) => {
             devLog.info("orchestrator", `Tool call: safety_check("${action}")`);
             const result = await guardianAgent(action, pageContext, sendThought, historyBlock || undefined);
             if (!result.success) {
-              sendThought("Narrator", `Hold on — ${result.message}`, "thinking");
+              sendThought("Narrator", `Heads up — ${result.message}`, "thinking");
             }
             return result;
           },
@@ -225,7 +247,8 @@ export async function runOrchestrator(
     );
     if (!hasToolExecution) {
       devLog.warn("orchestrator", "No tools called by LLM, forcing navigator fallback");
-      return await navigatorAgent(instruction, sendThought);
+      const fallback = await navigatorAgent(instruction, sendThought);
+      return { ...fallback, message: polishForVoice(fallback.message) };
     }
 
     // Check if any tool result requires confirmation
@@ -237,13 +260,14 @@ export async function runOrchestrator(
       )
     );
 
+    const finalMessage = polishForVoice(text || "All done!");
     devLog.info("orchestrator", "Orchestrator complete", {
-      finalMessage: text?.substring(0, 200),
+      finalMessage: finalMessage.substring(0, 200),
       needsConfirmation,
     });
     return {
       success: true,
-      message: text || "All done!",
+      message: finalMessage,
       confirmationRequired: needsConfirmation || false,
     };
   } catch (error) {
@@ -260,10 +284,10 @@ export async function runOrchestrator(
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
     done({ error: errorMsg }, "error");
     devLog.error("orchestrator", `Orchestrator failed: ${errorMsg}`);
-    sendThought("Narrator", `Sorry, I ran into a problem: ${errorMsg}`, "thinking");
+    sendThought("Narrator", `Hmm, something went wrong. Let me know if you want to try again.`, "thinking");
     return {
       success: false,
-      message: `Sorry, something went wrong. ${errorMsg}`,
+      message: `Ugh, hit a snag there. Want me to try that again?`,
     };
   }
 }
