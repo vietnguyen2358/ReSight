@@ -382,7 +382,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
             <div className="flex flex-col gap-2 w-full max-w-[300px]">
               {[
                 "Find protein powder on Target",
-                "Show me latest videos from jasontheween",
+                "Show me latest videos from a Youtube channel",
               ].map((suggestion) => (
                 <button
                   key={suggestion}
