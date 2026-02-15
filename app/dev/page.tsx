@@ -95,7 +95,7 @@ export default function DevPage() {
   return (
     <div
       style={{
-        background: "var(--color-resite-black, #030305)",
+        background: "var(--color-resight-black, #030305)",
         color: "#e5e5e5",
         fontFamily: "var(--font-mono, 'JetBrains Mono'), 'Fira Code', monospace",
         fontSize: "12px",
@@ -113,12 +113,12 @@ export default function DevPage() {
           alignItems: "center",
           gap: "12px",
           flexShrink: 0,
-          background: "var(--color-resite-dark, #08080c)",
+          background: "var(--color-resight-dark, #08080c)",
         }}
       >
         <span
           style={{
-            color: "var(--color-resite-cyan, #00e5ff)",
+            color: "var(--color-resight-cyan, #00e5ff)",
             fontWeight: 700,
             fontSize: "14px",
             fontFamily: "var(--font-display, 'Oxanium'), sans-serif",
@@ -126,7 +126,7 @@ export default function DevPage() {
             textTransform: "uppercase",
           }}
         >
-          ReSite DEV
+          ReSight DEV
         </span>
         <span
           style={{
@@ -134,14 +134,14 @@ export default function DevPage() {
             height: 8,
             borderRadius: "50%",
             background: connected
-              ? "var(--color-resite-green, #00ff6a)"
+              ? "var(--color-resight-green, #00ff6a)"
               : "#f87171",
             boxShadow: connected ? "0 0 6px rgba(0,255,106,0.4)" : "none",
             display: "inline-block",
           }}
           title={connected ? "Polling active" : "Disconnected"}
         />
-        <span style={{ color: "var(--color-resite-muted, #505068)" }}>|</span>
+        <span style={{ color: "var(--color-resight-muted, #505068)" }}>|</span>
 
         {/* Category filters */}
         {categories.map((cat) => (
@@ -153,14 +153,14 @@ export default function DevPage() {
               borderRadius: "4px",
               border: "1px solid",
               borderColor: filter === cat
-                ? (CATEGORY_COLORS[cat] || "var(--color-resite-cyan, #00e5ff)")
+                ? (CATEGORY_COLORS[cat] || "var(--color-resight-cyan, #00e5ff)")
                 : "rgba(255,255,255,0.08)",
               background: filter === cat
                 ? "rgba(255,255,255,0.04)"
                 : "transparent",
               color: filter === cat
-                ? (CATEGORY_COLORS[cat] || "var(--color-resite-cyan, #00e5ff)")
-                : "var(--color-resite-muted, #505068)",
+                ? (CATEGORY_COLORS[cat] || "var(--color-resight-cyan, #00e5ff)")
+                : "var(--color-resight-muted, #505068)",
               cursor: "pointer",
               fontSize: "11px",
               textTransform: "uppercase",
@@ -176,7 +176,7 @@ export default function DevPage() {
 
         <span
           style={{
-            color: "var(--color-resite-muted, #505068)",
+            color: "var(--color-resight-muted, #505068)",
             fontSize: "11px",
           }}
         >
@@ -190,14 +190,14 @@ export default function DevPage() {
             borderRadius: "4px",
             border: "1px solid",
             borderColor: autoScroll
-              ? "var(--color-resite-yellow, #d4ff00)"
+              ? "var(--color-resight-yellow, #d4ff00)"
               : "rgba(255,255,255,0.08)",
             background: autoScroll
               ? "rgba(212,255,0,0.06)"
               : "transparent",
             color: autoScroll
-              ? "var(--color-resite-yellow, #d4ff00)"
-              : "var(--color-resite-muted, #505068)",
+              ? "var(--color-resight-yellow, #d4ff00)"
+              : "var(--color-resight-muted, #505068)",
             cursor: "pointer",
             fontSize: "11px",
             fontFamily: "var(--font-display, 'Oxanium'), sans-serif",
@@ -218,7 +218,7 @@ export default function DevPage() {
             borderRadius: "4px",
             border: "1px solid rgba(255,255,255,0.08)",
             background: "transparent",
-            color: "var(--color-resite-muted, #505068)",
+            color: "var(--color-resight-muted, #505068)",
             cursor: "pointer",
             fontSize: "11px",
             fontFamily: "var(--font-display, 'Oxanium'), sans-serif",
@@ -240,7 +240,7 @@ export default function DevPage() {
         {filtered.length === 0 && (
           <div
             style={{
-              color: "var(--color-resite-muted, #505068)",
+              color: "var(--color-resight-muted, #505068)",
               padding: "40px",
               textAlign: "center",
             }}
@@ -271,13 +271,13 @@ export default function DevPage() {
               }}
             >
               {/* Main line */}
-              <span style={{ color: "var(--color-resite-muted, #505068)" }}>
+              <span style={{ color: "var(--color-resight-muted, #505068)" }}>
                 {formatTime(entry.timestamp)}
               </span>
               {" "}
               <span
                 style={{
-                  color: isError ? "#f87171" : "var(--color-resite-muted, #505068)",
+                  color: isError ? "#f87171" : "var(--color-resight-muted, #505068)",
                   fontWeight: isError ? 700 : 400,
                 }}
               >
@@ -303,8 +303,8 @@ export default function DevPage() {
                 <span
                   style={{
                     color: entry.durationMs > 5000
-                      ? "var(--color-resite-gold, #ffbe0b)"
-                      : "var(--color-resite-muted, #505068)",
+                      ? "var(--color-resight-gold, #ffbe0b)"
+                      : "var(--color-resight-muted, #505068)",
                     marginLeft: "8px",
                   }}
                 >
@@ -329,7 +329,7 @@ export default function DevPage() {
                     color: "rgba(255,255,255,0.6)",
                     margin: "4px 0 4px 20px",
                     padding: "8px",
-                    background: "var(--color-resite-surface, #0c0c12)",
+                    background: "var(--color-resight-surface, #0c0c12)",
                     borderRadius: "4px",
                     border: "1px solid rgba(255,255,255,0.06)",
                     overflow: "auto",

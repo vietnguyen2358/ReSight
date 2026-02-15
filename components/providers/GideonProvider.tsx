@@ -54,7 +54,7 @@ export function GideonProvider({ children }: { children: React.ReactNode }) {
       { id: String(++idCounter.current), agent, message, timestamp: Date.now(), type },
     ]);
 
-    if (!["Voice", "ReSite"].includes(agent)) {
+    if (!["Voice", "ReSight"].includes(agent)) {
       setActiveAgent(agent);
     }
   }, []);

@@ -8,7 +8,7 @@ interface ScreenshotCache {
   timestamp: number;
 }
 
-const CACHE_DIR = path.join(process.cwd(), ".resite-cache");
+const CACHE_DIR = path.join(process.cwd(), ".resight-cache");
 const CACHE_FILE = path.join(CACHE_DIR, "latest-screenshot.json");
 
 export function setLatestScreenshot(

@@ -2,15 +2,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-resite-black: #030305;
-  --color-resite-yellow: #d4ff00;
-  --color-resite-cyan: #00e5ff;
-  --color-resite-green: #00ff6a;
-  --color-resite-gold: #ffbe0b;
-  --color-resite-dark: #08080c;
-  --color-resite-gray: #141419;
-  --color-resite-muted: #505068;
-  --color-resite-surface: #0c0c12;
+  --color-resight-black: #030305;
+  --color-resight-yellow: #d4ff00;
+  --color-resight-cyan: #00e5ff;
+  --color-resight-green: #00ff6a;
+  --color-resight-gold: #ffbe0b;
+  --color-resight-dark: #08080c;
+  --color-resight-gray: #141419;
+  --color-resight-muted: #505068;
+  --color-resight-surface: #0c0c12;
 
   --font-display: "Oxanium", sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
@@ -26,13 +26,13 @@ html,
 body {
   height: 100%;
   overflow: hidden;
-  background: var(--color-resite-black);
-  color: var(--color-resite-yellow);
+  background: var(--color-resight-black);
+  color: var(--color-resight-yellow);
   font-family: var(--font-mono);
 }
 
 /* ── Atmospheric background ── */
-.resite-atmosphere {
+.resight-atmosphere {
   position: relative;
   background:
     radial-gradient(
@@ -45,7 +45,7 @@ body {
       rgba(212, 255, 0, 0.015) 0%,
       transparent 50%
     ),
-    var(--color-resite-black);
+    var(--color-resight-black);
 }
 
 /* ── Scanlines ── */
@@ -210,7 +210,7 @@ body {
 
 /* ── Focus styles ── */
 *:focus-visible {
-  outline: 1px solid var(--color-resite-cyan);
+  outline: 1px solid var(--color-resight-cyan);
   outline-offset: 2px;
 }
 

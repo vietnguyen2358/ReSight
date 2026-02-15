@@ -325,7 +325,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                   width: "6px",
                   height: "6px",
                   transform: "translate(-50%, -50%)",
-                  background: "var(--color-resite-cyan)",
+                  background: "var(--color-resight-cyan)",
                   boxShadow: "0 0 12px rgba(0,229,255,0.4)",
                 }}
               />
@@ -336,11 +336,11 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                   width: "3px",
                   height: "3px",
                   borderRadius: "50%",
-                  background: "var(--color-resite-yellow)",
+                  background: "var(--color-resight-yellow)",
                   top: "0",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  boxShadow: "0 0 6px var(--color-resite-yellow)",
+                  boxShadow: "0 0 6px var(--color-resight-yellow)",
                   animation: "orbit-spin 6s linear infinite",
                   transformOrigin: "0 40px",
                 }}
@@ -352,15 +352,15 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                 className="text-xs font-semibold uppercase tracking-[0.3em] mb-2"
                 style={{
                   fontFamily: "var(--font-display)",
-                  color: "var(--color-resite-cyan)",
+                  color: "var(--color-resight-cyan)",
                   textShadow: "0 0 15px rgba(0,229,255,0.2)",
                 }}
               >
-                ReSite Ready
+                ReSight Ready
               </p>
               <p
                 className="text-[11px] leading-relaxed max-w-[260px] mb-5"
-                style={{ color: "var(--color-resite-muted)" }}
+                style={{ color: "var(--color-resight-muted)" }}
               >
                 Voice-controlled browser navigation. Try a command below.
               </p>
@@ -382,7 +382,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                   style={{
                     background: "rgba(255,255,255,0.015)",
                     border: "1px solid rgba(255,255,255,0.04)",
-                    color: "var(--color-resite-muted)",
+                    color: "var(--color-resight-muted)",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "rgba(0,229,255,0.04)";
@@ -392,10 +392,10 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "rgba(255,255,255,0.015)";
                     e.currentTarget.style.borderColor = "rgba(255,255,255,0.04)";
-                    e.currentTarget.style.color = "var(--color-resite-muted)";
+                    e.currentTarget.style.color = "var(--color-resight-muted)";
                   }}
                 >
-                  <span style={{ color: "var(--color-resite-cyan)", opacity: 0.5, marginRight: "8px" }}>
+                  <span style={{ color: "var(--color-resight-cyan)", opacity: 0.5, marginRight: "8px" }}>
                     &rarr;
                   </span>
                   {suggestion}
@@ -421,7 +421,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                   style={{
                     background: "rgba(212,255,0,0.06)",
                     border: "1px solid rgba(212,255,0,0.12)",
-                    color: "var(--color-resite-yellow)",
+                    color: "var(--color-resight-yellow)",
                     backdropFilter: "blur(8px)",
                   }}
                 >
@@ -434,7 +434,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                     <div
                       className="w-[2px] flex-none rounded-full mt-1"
                       style={{
-                        background: "linear-gradient(180deg, var(--color-resite-green), transparent)",
+                        background: "linear-gradient(180deg, var(--color-resight-green), transparent)",
                         opacity: 0.4,
                       }}
                     />
@@ -443,11 +443,11 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                         className="text-[9px] uppercase tracking-[0.2em] font-bold"
                         style={{
                           fontFamily: "var(--font-display)",
-                          color: "var(--color-resite-green)",
+                          color: "var(--color-resight-green)",
                           opacity: 0.5,
                         }}
                       >
-                        ReSite
+                        ReSight
                       </span>
                       <p
                         className="text-[13px] leading-relaxed mt-1"
@@ -470,7 +470,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                             }
                             className="flex items-center gap-1.5 text-[10px] cursor-pointer transition-all duration-200"
                             style={{
-                              color: "var(--color-resite-muted)",
+                              color: "var(--color-resight-muted)",
                               opacity: 0.6,
                             }}
                             onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
@@ -516,7 +516,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                                             className="text-[9px] uppercase tracking-[0.15em] font-bold"
                                             style={{
                                               fontFamily: "var(--font-display)",
-                                              color: isAnswer ? "var(--color-resite-yellow)" : "var(--color-resite-green)",
+                                              color: isAnswer ? "var(--color-resight-yellow)" : "var(--color-resight-green)",
                                               opacity: isAnswer ? 0.7 : 0.4,
                                             }}
                                           >
@@ -526,7 +526,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                                             className="text-[7px] uppercase tracking-[0.1em] px-1 py-px rounded"
                                             style={{
                                               fontFamily: "var(--font-display)",
-                                              color: isAnswer ? "var(--color-resite-yellow)" : "var(--color-resite-muted)",
+                                              color: isAnswer ? "var(--color-resight-yellow)" : "var(--color-resight-muted)",
                                               background: isAnswer ? "rgba(212,255,0,0.08)" : "rgba(255,255,255,0.03)",
                                               opacity: isAnswer ? 0.8 : 0.4,
                                             }}
@@ -551,8 +551,8 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                                       className="w-1 h-1 rounded-full mt-1.5 flex-none"
                                       style={{
                                         background: isInterAgent
-                                          ? "var(--color-resite-gold)"
-                                          : "var(--color-resite-cyan)",
+                                          ? "var(--color-resight-gold)"
+                                          : "var(--color-resight-cyan)",
                                         opacity: 0.3,
                                       }}
                                     />
@@ -571,11 +571,11 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                                         <span className="text-[10px] leading-snug">
                                           <span
                                             className="font-bold"
-                                            style={{ color: "var(--color-resite-cyan)", opacity: 0.35 }}
+                                            style={{ color: "var(--color-resight-cyan)", opacity: 0.35 }}
                                           >
                                             [{from}]
                                           </span>{" "}
-                                          <span style={{ color: "var(--color-resite-muted)", opacity: 0.5 }}>
+                                          <span style={{ color: "var(--color-resight-muted)", opacity: 0.5 }}>
                                             {t.message}
                                           </span>
                                         </span>
@@ -619,8 +619,8 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                         className="w-[2px] flex-none rounded-full mt-0.5"
                         style={{
                           background: isAnswer
-                            ? "linear-gradient(180deg, var(--color-resite-yellow), transparent)"
-                            : "linear-gradient(180deg, var(--color-resite-green), transparent)",
+                            ? "linear-gradient(180deg, var(--color-resight-yellow), transparent)"
+                            : "linear-gradient(180deg, var(--color-resight-green), transparent)",
                           opacity: isAnswer ? 0.9 : 0.6,
                         }}
                       />
@@ -630,7 +630,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                             className="text-[9px] uppercase tracking-[0.2em] font-bold"
                             style={{
                               fontFamily: "var(--font-display)",
-                              color: isAnswer ? "var(--color-resite-yellow)" : "var(--color-resite-green)",
+                              color: isAnswer ? "var(--color-resight-yellow)" : "var(--color-resight-green)",
                               opacity: isAnswer ? 0.9 : 0.6,
                             }}
                           >
@@ -640,7 +640,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                             className="text-[8px] uppercase tracking-[0.15em] px-1.5 py-0.5 rounded"
                             style={{
                               fontFamily: "var(--font-display)",
-                              color: isAnswer ? "var(--color-resite-yellow)" : "var(--color-resite-muted)",
+                              color: isAnswer ? "var(--color-resight-yellow)" : "var(--color-resight-muted)",
                               background: isAnswer ? "rgba(212,255,0,0.1)" : "rgba(255,255,255,0.04)",
                               border: `1px solid ${isAnswer ? "rgba(212,255,0,0.2)" : "rgba(255,255,255,0.06)"}`,
                               opacity: isAnswer ? 1 : 0.5,
@@ -672,9 +672,9 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                       className="w-1 h-1 rounded-full mt-1.5 flex-none"
                       style={{
                         background: isInterAgent
-                          ? "var(--color-resite-gold)"
-                          : "var(--color-resite-cyan)",
-                        boxShadow: `0 0 4px ${isInterAgent ? "var(--color-resite-gold)" : "var(--color-resite-cyan)"}`,
+                          ? "var(--color-resight-gold)"
+                          : "var(--color-resight-cyan)",
+                        boxShadow: `0 0 4px ${isInterAgent ? "var(--color-resight-gold)" : "var(--color-resight-cyan)"}`,
                       }}
                     />
                     <div className="min-w-0">
@@ -692,11 +692,11 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                         <span className="text-[10px] leading-snug">
                           <span
                             className="font-bold"
-                            style={{ color: "var(--color-resite-cyan)", opacity: 0.6 }}
+                            style={{ color: "var(--color-resight-cyan)", opacity: 0.6 }}
                           >
                             [{from}]
                           </span>{" "}
-                          <span style={{ color: "var(--color-resite-muted)" }}>
+                          <span style={{ color: "var(--color-resight-muted)" }}>
                             {t.message}
                           </span>
                         </span>
@@ -736,7 +736,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                         style={{
                           background: "rgba(0,229,255,0.06)",
                           border: "1px solid rgba(0,229,255,0.2)",
-                          color: "var(--color-resite-cyan)",
+                          color: "var(--color-resight-cyan)",
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = "rgba(0,229,255,0.12)";
@@ -769,7 +769,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                       className="w-[2px] rounded-full"
                       style={{
                         height: "100%",
-                        background: "var(--color-resite-gold)",
+                        background: "var(--color-resight-gold)",
                         animation: `waveform-${(i % 3) + 1} ${0.6 + i * 0.1}s ease-in-out ${i * 0.08}s infinite`,
                         opacity: 0.6,
                       }}
@@ -780,7 +780,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                   className="text-[10px] uppercase tracking-[0.15em]"
                   style={{
                     fontFamily: "var(--font-display)",
-                    color: "var(--color-resite-gold)",
+                    color: "var(--color-resight-gold)",
                     opacity: 0.5,
                   }}
                 >
@@ -824,7 +824,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                     style={{
                       fontFamily: "var(--font-display)",
                       background: active ? "rgba(0,229,255,0.08)" : "transparent",
-                      color: active ? "var(--color-resite-cyan)" : "var(--color-resite-muted)",
+                      color: active ? "var(--color-resight-cyan)" : "var(--color-resight-muted)",
                       border: active ? "1px solid rgba(0,229,255,0.15)" : "1px solid transparent",
                     }}
                   >
@@ -886,14 +886,14 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                   ? "Type your answer..."
                   : loading
                     ? "Send new instruction or 'stop' to cancel..."
-                    : "Message ReSite..."
+                    : "Message ReSight..."
               }
               rows={2}
               className="w-full bg-transparent text-sm leading-relaxed px-4 pt-3.5 pb-2
                          outline-none resize-none placeholder:text-white/15"
               style={{
                 color: "rgba(255,255,255,0.9)",
-                caretColor: "var(--color-resite-cyan)",
+                caretColor: "var(--color-resight-cyan)",
                 wordWrap: "break-word",
                 overflowWrap: "break-word",
                 maxHeight: "120px",
@@ -909,7 +909,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                 className="text-[10px] tracking-wide"
                 style={{
                   fontFamily: "var(--font-display)",
-                  color: "var(--color-resite-muted)",
+                  color: "var(--color-resight-muted)",
                   opacity: 0.5,
                 }}
               >
@@ -918,7 +918,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                     <span
                       className="inline-block w-1.5 h-1.5 rounded-full"
                       style={{
-                        background: "var(--color-resite-gold)",
+                        background: "var(--color-resight-gold)",
                         animation: "dot-breathe 1.5s ease-in-out infinite",
                       }}
                     />
@@ -935,7 +935,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
                            cursor-pointer disabled:cursor-not-allowed transition-all duration-200"
                 style={{
                   background: input.trim() ? "rgba(212,255,0,0.1)" : "transparent",
-                  color: input.trim() ? "var(--color-resite-yellow)" : "var(--color-resite-muted)",
+                  color: input.trim() ? "var(--color-resight-yellow)" : "var(--color-resight-muted)",
                   opacity: input.trim() ? 1 : 0.25,
                 }}
               >

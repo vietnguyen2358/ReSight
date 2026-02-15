@@ -3,8 +3,8 @@ import { GideonProvider } from "@/components/providers/GideonProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ReSite — Voice Browser",
-  description: "ReSite: The Ultimate Voice Browser for the Visually Impaired",
+  title: "ReSight — Voice Browser",
+  description: "ReSight: The Ultimate Voice Browser for the Visually Impaired",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

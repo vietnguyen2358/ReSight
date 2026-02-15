@@ -2,50 +2,50 @@
 // Survives Next.js hot reloads via globalThis
 
 const g = globalThis as unknown as {
-  __resiteAbort?: boolean;
-  __resiteLastUrl?: string;
-  __resiteNavigatorController?: AbortController;
-  __resiteOrchestratorController?: AbortController;
+  __resightAbort?: boolean;
+  __resightLastUrl?: string;
+  __resightNavigatorController?: AbortController;
+  __resightOrchestratorController?: AbortController;
 };
 
 export function requestAbort(): void {
-  g.__resiteAbort = true;
+  g.__resightAbort = true;
 }
 
 export function clearAbort(): void {
-  g.__resiteAbort = false;
+  g.__resightAbort = false;
 }
 
 export function isAborted(): boolean {
-  return g.__resiteAbort === true;
+  return g.__resightAbort === true;
 }
 
 export function setLastUrl(url: string): void {
-  g.__resiteLastUrl = url;
+  g.__resightLastUrl = url;
 }
 
 export function getLastUrl(): string | null {
-  return g.__resiteLastUrl ?? null;
+  return g.__resightLastUrl ?? null;
 }
 
 // ── Navigator controller ──
 
 export function registerNavigatorController(controller: AbortController): void {
-  g.__resiteNavigatorController = controller;
+  g.__resightNavigatorController = controller;
 }
 
 export function clearNavigatorController(): void {
-  g.__resiteNavigatorController = undefined;
+  g.__resightNavigatorController = undefined;
 }
 
 // ── Orchestrator controller ──
 
 export function registerOrchestratorController(controller: AbortController): void {
-  g.__resiteOrchestratorController = controller;
+  g.__resightOrchestratorController = controller;
 }
 
 export function clearOrchestratorController(): void {
-  g.__resiteOrchestratorController = undefined;
+  g.__resightOrchestratorController = undefined;
 }
 
 /**
@@ -54,13 +54,13 @@ export function clearOrchestratorController(): void {
  * generateText loops immediately.
  */
 export function abortActiveTask(): void {
-  g.__resiteAbort = true;
-  if (g.__resiteNavigatorController) {
-    try { g.__resiteNavigatorController.abort(); } catch { /* ignore */ }
-    g.__resiteNavigatorController = undefined;
+  g.__resightAbort = true;
+  if (g.__resightNavigatorController) {
+    try { g.__resightNavigatorController.abort(); } catch { /* ignore */ }
+    g.__resightNavigatorController = undefined;
   }
-  if (g.__resiteOrchestratorController) {
-    try { g.__resiteOrchestratorController.abort(); } catch { /* ignore */ }
-    g.__resiteOrchestratorController = undefined;
+  if (g.__resightOrchestratorController) {
+    try { g.__resightOrchestratorController.abort(); } catch { /* ignore */ }
+    g.__resightOrchestratorController = undefined;
   }
 }

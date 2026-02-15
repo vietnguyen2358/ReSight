@@ -1,7 +1,7 @@
-# CLAUDE.md — ReSite Codebase Guide
+# CLAUDE.md — ReSight Codebase Guide
 
 ## Project Overview
-ReSite is a voice-controlled web browser for the visually impaired, built for TreeHacks 2026. Next.js 15 App Router app with a "Split Brain" architecture: voice-first UI (left pane) + headless browser live feed (right pane), orchestrated by a Council of AI Agents.
+ReSight is a voice-controlled web browser for the visually impaired, built for TreeHacks 2026. Next.js 15 App Router app with a "Split Brain" architecture: voice-first UI (left pane) + headless browser live feed (right pane), orchestrated by a Council of AI Agents.
 
 ## Tech Stack
 - **Framework:** Next.js 15 (App Router) + React 19
@@ -177,6 +177,6 @@ User Voice/Text → POST /api/orchestrator {instruction, history}
 
 ### Tailwind 4
 - Uses `@tailwindcss/postcss` plugin in postcss.config.mjs (no tailwind.config.js)
-- Custom colors defined via `@theme` block in globals.css (e.g., `--color-resite-yellow: #d4ff00`)
-- Used as classes: `bg-resite-black`, `text-resite-yellow`, `border-resite-green`, etc.
+- Custom colors defined via `@theme` block in globals.css (e.g., `--color-resight-yellow: #d4ff00`)
+- Used as classes: `bg-resight-black`, `text-resight-yellow`, `border-resight-green`, etc.
 - Theme palette: black (#030305), yellow (#d4ff00), cyan (#00e5ff), green (#00ff6a), gold (#ffbe0b)

@@ -8,7 +8,7 @@ interface PendingQuestion {
 }
 
 const g = globalThis as unknown as {
-  __resitePending?: PendingQuestion;
+  __resightPending?: PendingQuestion;
 };
 
 const TIMEOUT_MS = 30_000;
@@ -19,16 +19,16 @@ export function askQuestion(
 ): Promise<string> {
   return new Promise<string>((resolve) => {
     const timer = setTimeout(() => {
-      g.__resitePending = undefined;
+      g.__resightPending = undefined;
       resolve("no response");
     }, TIMEOUT_MS);
 
-    g.__resitePending = {
+    g.__resightPending = {
       question,
       options,
       resolve: (answer: string) => {
         clearTimeout(timer);
-        g.__resitePending = undefined;
+        g.__resightPending = undefined;
         resolve(answer);
       },
     };
@@ -36,8 +36,8 @@ export function askQuestion(
 }
 
 export function answerQuestion(answer: string): boolean {
-  if (g.__resitePending) {
-    g.__resitePending.resolve(answer);
+  if (g.__resightPending) {
+    g.__resightPending.resolve(answer);
     return true;
   }
   return false;
@@ -47,13 +47,13 @@ export function getPendingQuestion(): {
   question: string;
   options?: string[];
 } | null {
-  if (!g.__resitePending) return null;
+  if (!g.__resightPending) return null;
   return {
-    question: g.__resitePending.question,
-    options: g.__resitePending.options,
+    question: g.__resightPending.question,
+    options: g.__resightPending.options,
   };
 }
 
 export function hasPendingQuestion(): boolean {
-  return g.__resitePending !== undefined;
+  return g.__resightPending !== undefined;
 }

@@ -2,7 +2,7 @@ import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import type { SendThoughtFn, AgentResult } from "./types";
 
-const GUARDIAN_SYSTEM = `You are the Guardian agent for ReSite, a browser for BLIND users. Your job is critical — blind users cannot visually inspect URLs, page layouts, or red flags that sighted users catch instantly. You are their eyes for safety.
+const GUARDIAN_SYSTEM = `You are the Guardian agent for ReSight, a browser for BLIND users. Your job is critical — blind users cannot visually inspect URLs, page layouts, or red flags that sighted users catch instantly. You are their eyes for safety.
 
 Respond with JSON:
 { "safe": boolean, "reason": string, "confirmationRequired": boolean, "threatType": string }

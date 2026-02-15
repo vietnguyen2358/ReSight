@@ -13,26 +13,26 @@ import { SparklesCore } from "@/components/ui/sparkles";
 const STATUS_CONFIG: Record<string, { label: string; color: string; dotClass: string; sparkleColor: string }> = {
   idle: {
     label: "Standing By",
-    color: "var(--color-resite-cyan)",
-    dotClass: "bg-resite-cyan",
+    color: "var(--color-resight-cyan)",
+    dotClass: "bg-resight-cyan",
     sparkleColor: "#00e5ff",
   },
   listening: {
     label: "Listening",
-    color: "var(--color-resite-green)",
-    dotClass: "bg-resite-green",
+    color: "var(--color-resight-green)",
+    dotClass: "bg-resight-green",
     sparkleColor: "#00ff6a",
   },
   thinking: {
     label: "Processing",
-    color: "var(--color-resite-gold)",
-    dotClass: "bg-resite-gold",
+    color: "var(--color-resight-gold)",
+    dotClass: "bg-resight-gold",
     sparkleColor: "#ffbe0b",
   },
   speaking: {
     label: "Speaking",
-    color: "var(--color-resite-yellow)",
-    dotClass: "bg-resite-yellow",
+    color: "var(--color-resight-yellow)",
+    dotClass: "bg-resight-yellow",
     sparkleColor: "#d4ff00",
   },
 };
@@ -63,7 +63,7 @@ export default function MindPane() {
   }, [toggleMode]);
 
   return (
-    <div className="flex flex-col h-full bg-resite-black relative overflow-hidden">
+    <div className="flex flex-col h-full bg-resight-black relative overflow-hidden">
       {inputMode === "voice" && <VoiceManager />}
 
       {/* Aceternity background beams */}
@@ -137,7 +137,7 @@ export default function MindPane() {
                 className="text-[15px] font-bold tracking-[0.35em] uppercase"
                 style={{
                   fontFamily: "var(--font-display)",
-                  background: "linear-gradient(90deg, var(--color-resite-yellow) 0%, var(--color-resite-cyan) 100%)",
+                  background: "linear-gradient(90deg, var(--color-resight-yellow) 0%, var(--color-resight-cyan) 100%)",
                   backgroundClip: "text",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -145,13 +145,13 @@ export default function MindPane() {
                   animation: "text-shimmer 6s ease-in-out infinite",
                 }}
               >
-                ReSite
+                ReSight
               </h1>
               <span
                 className="text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 rounded-md"
                 style={{
                   fontFamily: "var(--font-display)",
-                  color: "var(--color-resite-muted)",
+                  color: "var(--color-resight-muted)",
                   background: "rgba(255,255,255,0.02)",
                   border: "1px solid rgba(255,255,255,0.05)",
                 }}
@@ -172,7 +172,7 @@ export default function MindPane() {
                 className="text-[10px] uppercase tracking-[0.2em]"
                 style={{
                   fontFamily: "var(--font-display)",
-                  color: isActive ? config.color : "var(--color-resite-muted)",
+                  color: isActive ? config.color : "var(--color-resight-muted)",
                   transition: "color 0.3s ease",
                 }}
               >

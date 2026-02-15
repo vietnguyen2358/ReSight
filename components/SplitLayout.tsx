@@ -10,7 +10,7 @@ export default function SplitLayout() {
   const [view, setView] = useState<PaneView>("split");
 
   return (
-    <div className="flex h-screen w-screen bg-resite-black relative">
+    <div className="flex h-screen w-screen bg-resight-black relative">
       {/* Mind Pane — always mounted to preserve chat state */}
       <div
         className="h-full overflow-hidden transition-all duration-500 ease-in-out"
@@ -61,8 +61,8 @@ export default function SplitLayout() {
                 : "transparent",
             color:
               view === "mind"
-                ? "var(--color-resite-cyan)"
-                : "var(--color-resite-muted)",
+                ? "var(--color-resight-cyan)"
+                : "var(--color-resight-muted)",
             border: `1px solid ${
               view === "mind"
                 ? "rgba(0,229,255,0.2)"
@@ -90,8 +90,8 @@ export default function SplitLayout() {
                 : "transparent",
             color:
               view === "split"
-                ? "var(--color-resite-yellow)"
-                : "var(--color-resite-muted)",
+                ? "var(--color-resight-yellow)"
+                : "var(--color-resight-muted)",
             border: `1px solid ${
               view === "split"
                 ? "rgba(212,255,0,0.15)"
@@ -119,8 +119,8 @@ export default function SplitLayout() {
                 : "transparent",
             color:
               view === "world"
-                ? "var(--color-resite-green)"
-                : "var(--color-resite-muted)",
+                ? "var(--color-resight-green)"
+                : "var(--color-resight-muted)",
             border: `1px solid ${
               view === "world"
                 ? "rgba(0,255,106,0.15)"

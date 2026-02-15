@@ -1,6 +1,6 @@
-# ReSite Sample Conversation Flows
+# ReSight Sample Conversation Flows
 
-Reference conversations showing how ReSite handles real browsing tasks for visually impaired users. Each flow demonstrates the full pipeline: user voice input → Groq Whisper STT → orchestrator → navigator (with Stagehand browser automation) → conversational narration → spoken response via TTS (ElevenLabs if configured, Deepgram fallback). During processing, Narrator thoughts are spoken aloud as progress updates so the user always knows what's happening.
+Reference conversations showing how ReSight handles real browsing tasks for visually impaired users. Each flow demonstrates the full pipeline: user voice input → Groq Whisper STT → orchestrator → navigator (with Stagehand browser automation) → conversational narration → spoken response via TTS (ElevenLabs if configured, Deepgram fallback). During processing, Narrator thoughts are spoken aloud as progress updates so the user always knows what's happening.
 
 These are written as if they ran through the live app with Browserbase/Stagehand.
 
@@ -168,7 +168,7 @@ These are written as if they ran through the live app with Browserbase/Stagehand
 
 ## 9. Multi-Turn Research — TreeHacks 2026
 
-This flow demonstrates a natural multi-turn conversation where the user keeps asking follow-up questions about the same topic, and ReSite maintains context across turns.
+This flow demonstrates a natural multi-turn conversation where the user keeps asking follow-up questions about the same topic, and ReSight maintains context across turns.
 
 **User:** "What is TreeHacks 2026?"
 
@@ -216,7 +216,7 @@ This flow demonstrates a natural multi-turn conversation where the user keeps as
 
 ## Multi-Agent Flows
 
-These scenarios demonstrate how multiple agents in the ReSite Council coordinate to protect and assist the user. Each agent has a distinct role visible in the thought stream.
+These scenarios demonstrate how multiple agents in the ReSight Council coordinate to protect and assist the user. Each agent has a distinct role visible in the thought stream.
 
 ### 10. Guardian Intercept — Sketchy Link Protection
 

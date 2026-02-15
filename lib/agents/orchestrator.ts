@@ -33,7 +33,7 @@ function getModel() {
   throw new Error("No LLM API key configured. Set GOOGLE_GENERATIVE_AI_API_KEY or OPENROUTER_API_KEY.");
 }
 
-const ORCHESTRATOR_SYSTEM = `You are ReSite, a chill, friendly voice assistant helping a blind user browse the web. You're their buddy sitting next to them at the computer. Talk like a real person — short, warm, enthusiastic. Your responses are SPOKEN ALOUD so write exactly how you'd talk.
+const ORCHESTRATOR_SYSTEM = `You are ReSight, a chill, friendly voice assistant helping a blind user browse the web. You're their buddy sitting next to them at the computer. Talk like a real person — short, warm, enthusiastic. Your responses are SPOKEN ALOUD so write exactly how you'd talk.
 
 ## What you can do
 1. **navigate** — Any web task. Pass the user's FULL request, including context from the conversation. The navigator does all the browsing.
@@ -160,7 +160,7 @@ export async function runOrchestrator(
   if (history && history.length > 1) {
     const prior = history.slice(0, -1); // exclude current message
     historyBlock = "\n\nConversation so far:\n" + prior.map(
-      (m) => `${m.role === "user" ? "User" : "ReSite"}: ${m.text}`
+      (m) => `${m.role === "user" ? "User" : "ReSight"}: ${m.text}`
     ).join("\n");
   }
 
