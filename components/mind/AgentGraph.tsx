@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
-import { useGideon } from "@/components/providers/GideonProvider";
+import { useReSight } from "@/components/providers/ReSightProvider";
 
 // ── Node definitions ──
 const NODES = [
@@ -56,7 +56,7 @@ function truncate(text: string, max: number): string {
 }
 
 export default function AgentGraph() {
-  const { thoughts, status } = useGideon();
+  const { thoughts, status } = useReSight();
 
   // 1-second tick to age out stale active states
   const [tick, setTick] = useState(0);
@@ -86,8 +86,10 @@ export default function AgentGraph() {
   const [completedAgents, setCompletedAgents] = useState<Set<string>>(new Set());
   const prevActiveRef = useRef<Set<string>>(new Set());
 
-  // Derive active agents from recent thoughts
+  // Derive active agents from recent thoughts (when idle/canceled, clear immediately)
   const { activeAgents, activeEdges } = useMemo(() => {
+    if (status === "idle") return { activeAgents: new Set<string>(), activeEdges: new Set<string>() };
+
     const now = Date.now();
     const active = new Set<string>();
 

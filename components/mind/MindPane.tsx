@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import GideonSphere from "./GideonSphere";
+import ReSightSphere from "./ReSightSphere";
 import ChatPanel from "./ChatPanel";
 import AgentGraph from "./AgentGraph";
 import SpeakButton from "./SpeakButton";
 import VoiceManager from "@/components/voice/VoiceManager";
-import { useGideon } from "@/components/providers/GideonProvider";
+import { useReSight } from "@/components/providers/ReSightProvider";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { SparklesCore } from "@/components/ui/sparkles";
 
@@ -39,7 +39,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dotClass: st
 
 
 export default function MindPane() {
-  const { status } = useGideon();
+  const { status } = useReSight();
   const [inputMode, setInputMode] = useState<"voice" | "chat">("voice");
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.idle;
   const isActive = status === "thinking" || status === "listening";
@@ -93,7 +93,7 @@ export default function MindPane() {
         <div className="flex items-center gap-4 px-5 py-3.5">
           {/* Sphere with sparkles overlay */}
           <div className="relative w-12 h-12 flex-none">
-            <GideonSphere />
+            <ReSightSphere />
             {/* Sparkles around sphere */}
             <div className="absolute -inset-2 pointer-events-none">
               <SparklesCore

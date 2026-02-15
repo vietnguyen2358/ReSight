@@ -1,10 +1,10 @@
 "use client";
 
 import LiveFeed from "./LiveFeed";
-import { useGideon } from "@/components/providers/GideonProvider";
+import { useReSight } from "@/components/providers/ReSightProvider";
 
 export default function WorldPane() {
-  const { activeAgent, status } = useGideon();
+  const { activeAgent, status } = useReSight();
   const isActive = status === "thinking" || status === "listening";
 
   return (

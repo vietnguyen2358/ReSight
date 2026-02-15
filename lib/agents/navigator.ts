@@ -57,6 +57,8 @@ When you use goto_url or do_action, the tool result includes a \`visualDescripti
 
 The DOM-extracted fields (pageContent, headings, prices, ratings) are your BACKUP for exact data — use them to confirm specific numbers, but lead with the visual experience.
 
+**When you have visual descriptions from 2+ pages, that is ENOUGH.** Call narrate with your comparison/summary, then done. Do NOT keep browsing.
+
 You are their EYES, not their screen reader. A screen reader dumps text. YOU tell them what's going on — what happened, what's here, what they can do — like a friend who can see the screen.
 
 **GOOD (vision + context, practical):**
@@ -102,6 +104,7 @@ Answer QUICKLY. Highlights only — never data dumps.
 - Places: rating, address, one standout detail
 - Got enough? Call done IMMEDIATELY. Google snippet = enough.
 - Offer to go deeper, don't just go deeper.
+- **Comparison / visual tasks** (architecture, campus, design): Visit 2 pages max. After goto_url to both, you get visualDescription for each. That's ENOUGH. Call narrate with the comparison, then done. Do NOT keep browsing to more pages, maps, or sub-pages.
 
 ## WHEN TO CLICK INTO PAGES vs. STAY ON SEARCH RESULTS
 - **Search results pages** (Google, Amazon, etc.) only have titles, prices, star ratings, and short snippets. That's enough for a quick overview.
@@ -158,7 +161,7 @@ Only when genuinely ambiguous:
 - Start with goto_url, then narrate, then continue.
 - If something fails, try a different approach — tell the user casually: "That didn't work, let me try another way..."
 - NEVER call done until you have a real answer.
-- Call done AS SOON AS you have enough. Don't over-browse.
+- Call done AS SOON AS you have enough. Don't over-browse. After 2-3 pages with visual descriptions, you have enough — narrate and done.
 - If you see "LOOP DETECTED", "STEP LIMIT REACHED", "TOO MANY FAILURES", "STALE PAGE", or "ABORTED", call done IMMEDIATELY with what you have.
 - Your done summary MUST be 2-3 sentences, under 50 words — casual, packed with specifics.
 - End with something natural: "Want me to grab the vanilla one?" not "Would you like me to assist further?"
@@ -389,7 +392,7 @@ export async function navigatorAgent(
   const MAX_REPEATS = 5;
   const MAX_CONSECUTIVE_FAILURES = 6;
   const MAX_STALE_PAGES = 6;
-  const HARD_STEP_LIMIT = 30;
+  const HARD_STEP_LIMIT = 23;
 
   // ── Force-stop mechanism ──
   // AbortController kills the generateText loop at the code level.
@@ -495,14 +498,22 @@ export async function navigatorAgent(
   const originalSendThought: SendThoughtFn = sendThought;
   // Intercept narrator thoughts so we can build a fallback summary
   // and suppress any thoughts after force-stop (tools may still run briefly after abort)
-  sendThought = (agent: string, message: string, type?: "thinking" | "answer") => {
+  sendThought = (
+    agent: string,
+    message: string,
+    type?: "thinking" | "answer",
+    activity?: import("./types").ThoughtActivity
+  ) => {
     if (forceStopReason) return; // suppress all thoughts after force-stop
     if (agent === "Narrator") narratorMessages.push(message);
-    originalSendThought(agent, message, type);
+    originalSendThought(agent, message, type, activity);
   };
 
-  // Internal status updates — shown subtly in UI, not as prominent narrator blocks
-  const statusThought = (message: string) => sendThought("Navigator", message, "thinking");
+  // Internal status updates — use structured activity, no pattern-matching on message content
+  const statusThought = (
+    message: string,
+    activity?: import("./types").ThoughtActivity
+  ) => sendThought("Navigator", message, "thinking", activity);
 
   // Track last tool for context-aware keepalive messages
   const runState = { lastToolName: "", lastToolArg: "" };
@@ -578,13 +589,21 @@ export async function navigatorAgent(
       return stagePrefix + phaseMsg;
     };
 
+    const keepaliveActivity: Record<string, import("./types").ThoughtActivity> = {
+      goto_url: "navigating",
+      do_action: "acting",
+      extract_info: "extracting",
+      narrate: "summarizing",
+    };
+
     let keepaliveStage = 0;
     const keepaliveId = setInterval(() => {
       if (forceStopReason) return;
       const stage = Math.min(keepaliveStage, 2) as 0 | 1 | 2;
-      statusThought(getKeepaliveMessage(stage));
+      const activity = keepaliveActivity[runState.lastToolName];
+      statusThought(getKeepaliveMessage(stage), activity);
       keepaliveStage++;
-    }, 10000);
+    }, 20000);
     const clearKeepalive = () => clearInterval(keepaliveId);
 
     let text: string | undefined;
@@ -594,7 +613,7 @@ export async function navigatorAgent(
         model: getModel(),
         system: NAVIGATOR_SYSTEM,
         prompt: navigatorPrompt,
-        stopWhen: stepCountIs(30),
+        stopWhen: stepCountIs(23),
         abortSignal: controller.signal,
         tools: {
         goto_url: tool({
@@ -618,7 +637,10 @@ export async function navigatorAgent(
             try {
               const hostname = new URL(fullUrl).hostname.replace("www.", "");
               if (BLOCKED_DOMAINS.some((d) => hostname === d || hostname.endsWith(`.${d}`))) {
-                statusThought(`That site blocks automated browsers, trying a different approach...`);
+                statusThought(
+                  `That site blocks automated browsers, trying a different approach...`,
+                  "verifying"
+                );
                 return {
                   blocked: true,
                   blockType: "Known CAPTCHA site",
@@ -638,7 +660,7 @@ export async function navigatorAgent(
             const navMessage = searchQuery
               ? `Searching for "${searchQuery}" real quick...`
               : `Pulling up ${siteName}...`;
-            statusThought(navMessage);
+            statusThought(navMessage, searchQuery ? "searching" : "navigating");
 
             // Track URL for go-back support
             setLastUrl(await getCurrentUrl());
@@ -650,7 +672,7 @@ export async function navigatorAgent(
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               navTimer({ success: false, error: msg }, "warn");
-              statusThought("Page is loading slowly, but still going...");
+              statusThought("Page is loading slowly, but still going...", "loading");
             }
 
             // Wait for page to settle (reduced from 6s — captcha retry has its own wait)
@@ -683,7 +705,10 @@ export async function navigatorAgent(
                 };
               }
               devLog.warn("navigator", `Bot block confirmed: ${blockType} on ${fullUrl}`);
-              statusThought(`Site is blocking automated access, trying another approach...`);
+              statusThought(
+                `Site is blocking automated access, trying another approach...`,
+                "verifying"
+              );
               return {
                 ...ctx,
                 blocked: true,
@@ -705,7 +730,12 @@ export async function navigatorAgent(
               "Okay cool, let me see what's here...",
               "Page is here, reading through it...",
             ];
-            sendThought("Narrator", loadedPhrases[stepNumber % loadedPhrases.length], "thinking");
+            sendThought(
+              "Narrator",
+              loadedPhrases[stepNumber % loadedPhrases.length],
+              "thinking",
+              "loading"
+            );
 
             // Get visual description (uses already-captured screenshot)
             let visualDescription = "";
@@ -744,27 +774,13 @@ export async function navigatorAgent(
             if (loopMsg) return { error: loopMsg, currentUrl: await getCurrentUrl(), pageTitle: await getPageTitle() };
 
             devLog.info("navigator", `[Step ${stepNumber}] do_action: "${action}"`);
-            // Make action descriptions conversational
-            const target = action.replace(/^(click|tap)\s+(the\s+|on\s+)?/i, "");
-            const friendlyAction = action.toLowerCase().startsWith("click") || action.toLowerCase().startsWith("tap")
-              ? `Hitting ${target}...`
-              : action.toLowerCase().startsWith("type")
-                ? `Filling that in...`
-                : action.toLowerCase().startsWith("scroll")
-                  ? "Scrolling down a bit..."
-                  : action.toLowerCase().startsWith("press")
-                    ? `Pressing ${action.replace(/^press\s+/i, "")}...`
-                    : `${action}...`;
-            statusThought(friendlyAction);
+            statusThought("Interacting with the page...", "acting");
 
-            const actTimer = devLog.time("stagehand", `act("${action}")  [via navigator tool]`);
             try {
               await performAction(action);
-              actTimer({ success: true });
               consecutiveFailures = 0;
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
-              actTimer({ success: false, error: msg }, "error");
               devLog.error("navigator", `[Step ${stepNumber}] Action FAILED: "${action}"`, { error: msg });
               consecutiveFailures++;
               statusThought(`Action failed, trying a different approach...`);
@@ -835,21 +851,21 @@ export async function navigatorAgent(
               "Scanning for the info you need...",
               "Grabbing the key details...",
             ];
-            sendThought("Narrator", extractPhrases[stepNumber % extractPhrases.length], "thinking");
+            sendThought(
+              "Narrator",
+              extractPhrases[stepNumber % extractPhrases.length],
+              "thinking",
+              "extracting"
+            );
 
             try {
-              const extractTimer = devLog.time("stagehand", `extract("${extractInstruction}")`);
               const result = await extractData(extractInstruction);
-              extractTimer({
-                success: true,
-                resultPreview: JSON.stringify(result).substring(0, 500),
-              });
               await takeScreenshot();
               return result;
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               devLog.warn("navigator", `extract failed, falling back to innerText`, { error: msg });
-              statusThought("Having trouble reading page, trying fallback...");
+              statusThought("Having trouble reading page, trying fallback...", "extracting");
               const fallbackText = await evaluateInPage(
                 () => document.body.innerText.substring(0, 3000)
               ).catch(() => "Could not read page text");
@@ -883,8 +899,8 @@ export async function navigatorAgent(
               description.length > minSummaryLength && (hasSpecificData || /found|here's|result|option|price|rating/i.test(description));
             if (isSummaryLike) {
               substantiveNarrations++;
-              // After 2 substantive answers, the model has what it needs — force stop
-              if (substantiveNarrations >= 2) {
+              // After 1 substantive answer, we have enough — force stop to avoid over-browsing
+              if (substantiveNarrations >= 1) {
                 sendThought("Narrator", description, "answer");
                 finalMessage = description;
                 forceStop("Answer found — stopping to avoid repetition");
@@ -952,13 +968,15 @@ export async function navigatorAgent(
     // Build the best possible summary
     let message = finalMessage || text;
     if (!message) {
-      // Use the last narrator narration as fallback (skip action descriptions like "Opening..." / "Clicking...")
       const narrations = narratorMessages.filter(
         (m) => !m.endsWith("...") || m.length > 80
       );
       message = narrations.length > 0
         ? narrations[narrations.length - 1]
         : `I finished browsing. Currently on: ${await getPageTitle() || await getCurrentUrl()}`;
+    }
+    if (stepNumber >= HARD_STEP_LIMIT) {
+      message = `I hit the step limit before finishing. ${message}`;
     }
     // Never return the generic "blank page" / "starting fresh" message when we did nothing
     const isBlankPageGeneric = stepNumber === 0 && /starting fresh|blank page|ready to help.*what would you like/i.test(message);
@@ -994,13 +1012,15 @@ export async function navigatorAgent(
         return { success: true, message: "Stopped." };
       }
 
-      // If finalMessage is already set, it was already narrated by the tool that set it
-      // (narrate or done), so don't re-send it as a thought.
-      if (finalMessage) {
-        return { success: true, message: finalMessage };
-      }
-      const message = `Alright, I had to cut it short but here's what I found so far.`;
-      sendThought("Narrator", message, "answer");
+      const isStepLimit = forceStopReason.startsWith("Step limit");
+      const lastNarration = narratorMessages.filter((m) => !m.endsWith("...") || m.length > 80).pop();
+      const content = finalMessage || lastNarration || `Currently on ${await getPageTitle() || await getCurrentUrl()}`;
+      const message = isStepLimit
+        ? `I hit the step limit before finishing. ${content}`
+        : finalMessage
+          ? content
+          : `Alright, I had to cut it short but here's what I found so far: ${content}`;
+      if (!finalMessage) sendThought("Narrator", message, "answer");
       return { success: true, message };
     }
 

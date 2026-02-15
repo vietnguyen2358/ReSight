@@ -38,7 +38,7 @@ BROWSERBASE_PROJECT_ID=          # Required for BROWSERBASE mode
 ### File Structure
 ```
 app/
-  layout.tsx              # Root layout, wraps children in GideonProvider
+  layout.tsx              # Root layout, wraps children in ReSightProvider
   page.tsx                # Renders SplitLayout (dynamically imported, no SSR)
   globals.css             # Tailwind 4 @import + @theme (black/cyan/yellow palette)
   dev/
@@ -53,7 +53,7 @@ app/
 components/
   SplitLayout.tsx         # 50/50 flex split: MindPane | WorldPane
   providers/
-    GideonProvider.tsx    # React context: status, thoughts, screenshot, boundingBoxes
+    ReSightProvider.tsx    # React context: status, thoughts, screenshot, boundingBoxes
                           # Also subscribes to SSE thought-stream + polls /api/screenshot
   mind/
     MindPane.tsx          # Left pane: sphere + chat panel + speak button + VoiceManager
@@ -61,7 +61,7 @@ components/
                           # Sends conversation history (last 10 messages) with each request
                           # AbortController-based interrupts: new instructions abort old tasks
                           # Polls /api/clarification for pending questions
-    GideonSphere.tsx      # Three.js Canvas, icosahedron wireframe, color/speed by status
+    ReSightSphere.tsx      # Three.js Canvas, icosahedron wireframe, color/speed by status
                           # @ts-nocheck due to R3F v8 + React 19 type incompatibility
                           # Loaded via dynamic(() => import(...), { ssr: false })
     SpeakButton.tsx       # Toggle button, breathing/pulse CSS animations
@@ -169,7 +169,7 @@ User Voice/Text → POST /api/orchestrator {instruction, history}
 
 ### React Three Fiber + React 19
 - R3F v8 has peer dep `react >=18 <19` — install with `--legacy-peer-deps`
-- JSX types (mesh, icosahedronGeometry) don't resolve — GideonSphere.tsx uses `@ts-nocheck`
+- JSX types (mesh, icosahedronGeometry) don't resolve — ReSightSphere.tsx uses `@ts-nocheck`
 - Must use `dynamic(() => import(...), { ssr: false })` — SSR crashes with ReactCurrentBatchConfig error
 
 ### next.config.ts

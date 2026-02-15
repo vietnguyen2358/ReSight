@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 
-export type GideonStatus = "idle" | "listening" | "thinking" | "speaking";
+export type ReSightStatus = "idle" | "listening" | "thinking" | "speaking";
 
 export interface ThoughtEntry {
   id: string;
@@ -10,6 +10,7 @@ export interface ThoughtEntry {
   message: string;
   timestamp: number;
   type?: "thinking" | "answer";
+  activity?: string;
 }
 
 export interface BoundingBox {
@@ -20,11 +21,16 @@ export interface BoundingBox {
   label: string;
 }
 
-interface GideonContextValue {
-  status: GideonStatus;
-  setStatus: (s: GideonStatus) => void;
+interface ReSightContextValue {
+  status: ReSightStatus;
+  setStatus: (s: ReSightStatus) => void;
   thoughts: ThoughtEntry[];
-  addThought: (agent: string, message: string, type?: "thinking" | "answer") => void;
+  addThought: (
+    agent: string,
+    message: string,
+    type?: "thinking" | "answer",
+    activity?: string
+  ) => void;
   latestScreenshot: string | null;
   setLatestScreenshot: (s: string | null) => void;
   boundingBoxes: BoundingBox[];
@@ -32,32 +38,51 @@ interface GideonContextValue {
   activeAgent: string | null;
 }
 
-const GideonContext = createContext<GideonContextValue | null>(null);
+const ReSightContext = createContext<ReSightContextValue | null>(null);
 
-export function useGideon() {
-  const ctx = useContext(GideonContext);
-  if (!ctx) throw new Error("useGideon must be used within GideonProvider");
+export function useReSight() {
+  const ctx = useContext(ReSightContext);
+  if (!ctx) throw new Error("useReSight must be used within ReSightProvider");
   return ctx;
 }
 
-export function GideonProvider({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<GideonStatus>("idle");
+export function ReSightProvider({ children }: { children: React.ReactNode }) {
+  const [status, setStatusState] = useState<ReSightStatus>("idle");
   const [thoughts, setThoughts] = useState<ThoughtEntry[]>([]);
   const [latestScreenshot, setLatestScreenshot] = useState<string | null>(null);
   const [boundingBoxes, setBoundingBoxes] = useState<BoundingBox[]>([]);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const idCounter = useRef(0);
 
-  const addThought = useCallback((agent: string, message: string, type?: "thinking" | "answer") => {
-    setThoughts((prev) => [
-      ...prev.slice(-99),
-      { id: String(++idCounter.current), agent, message, timestamp: Date.now(), type },
-    ]);
-
-    if (!["Voice", "ReSight"].includes(agent)) {
-      setActiveAgent(agent);
-    }
+  const setStatus = useCallback((s: ReSightStatus) => {
+    setStatusState(s);
+    if (s === "idle") setActiveAgent(null);
   }, []);
+
+  const addThought = useCallback(
+    (
+      agent: string,
+      message: string,
+      type?: "thinking" | "answer",
+      activity?: string
+    ) => {
+      setThoughts((prev) => [
+        ...prev.slice(-99),
+        {
+          id: String(++idCounter.current),
+          agent,
+          message,
+          timestamp: Date.now(),
+          type,
+          activity,
+        },
+      ]);
+      if (!["Voice", "ReSight"].includes(agent)) {
+        setActiveAgent(agent);
+      }
+    },
+    []
+  );
 
   // Subscribe to the thought-stream SSE
   useEffect(() => {
@@ -68,7 +93,7 @@ export function GideonProvider({ children }: { children: React.ReactNode }) {
         const data = JSON.parse(event.data);
         if (data.agent && data.message) {
           console.log(`[${data.agent}] [${data.type || "thinking"}] ${data.message}`);
-          addThought(data.agent, data.message, data.type);
+          addThought(data.agent, data.message, data.type, data.activity);
         }
       } catch {
         // ignore parse errors
@@ -97,13 +122,11 @@ export function GideonProvider({ children }: { children: React.ReactNode }) {
           const ts = data.timestamp ?? 0;
 
           if (!initialized) {
-            // First successful response: record whatever is cached as stale
             lastSeenTimestamp = ts;
             initialized = true;
             return;
           }
 
-          // Only show screenshots that are newer than what was cached at mount
           if (data.screenshot && ts > lastSeenTimestamp) {
             setLatestScreenshot(data.screenshot);
             setBoundingBoxes(data.boundingBoxes ?? []);
@@ -119,7 +142,7 @@ export function GideonProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <GideonContext.Provider
+    <ReSightContext.Provider
       value={{
         status,
         setStatus,
@@ -133,6 +156,6 @@ export function GideonProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-    </GideonContext.Provider>
+    </ReSightContext.Provider>
   );
 }

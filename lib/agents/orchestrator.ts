@@ -75,8 +75,13 @@ You MUST call the navigate tool for ANY user request that involves the web. NEVE
 - NEVER ask for information the user already provided.
 - If the user says "yes" or "go ahead", they're confirming the last thing discussed — don't ask what they mean.`;
 
-function sendThought(agent: string, message: string, type?: "thinking" | "answer") {
-  thoughtEmitter.sendThought(agent, message, type);
+function sendThought(
+  agent: string,
+  message: string,
+  type?: "thinking" | "answer",
+  activity?: import("./types").ThoughtActivity
+) {
+  thoughtEmitter.sendThought(agent, message, type, activity);
 }
 
 /** Strip markdown/bullets/formatting so the response sounds natural when spoken aloud */

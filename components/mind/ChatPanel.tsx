@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGideon } from "@/components/providers/GideonProvider";
+import { useReSight } from "@/components/providers/ReSightProvider";
 import { MovingBorder } from "@/components/ui/moving-border";
 
 interface ThoughtSnapshot {
@@ -40,7 +40,7 @@ interface ChatPanelProps {
 }
 
 export default function ChatPanel({ inputMode = "chat", onInputModeChange, speakButton }: ChatPanelProps) {
-  const { setStatus, thoughts, status } = useGideon();
+  const { setStatus, thoughts, status } = useReSight();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [input, setInput] = useState("");
@@ -382,7 +382,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
             <div className="flex flex-col gap-2 w-full max-w-[300px]">
               {[
                 "Find protein powder on Target",
-                "Show me latest videos from a Youtube channel",
+                "Show me latest videos on Youtube",
               ].map((suggestion) => (
                 <button
                   key={suggestion}

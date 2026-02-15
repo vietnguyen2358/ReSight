@@ -1,4 +1,4 @@
-import type { BoundingBox } from "@/components/providers/GideonProvider";
+import type { BoundingBox } from "@/components/providers/ReSightProvider";
 import { promises as fs } from "fs";
 import path from "path";
 import { devLog } from "@/lib/dev-logger";

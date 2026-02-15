@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useGideon } from "@/components/providers/GideonProvider";
+import { useReSight } from "@/components/providers/ReSightProvider";
 
 const STATUS_COLORS: Record<string, string> = {
   idle: "#00e5ff",
@@ -73,9 +73,9 @@ function project(
   return { x: cx + x * scale * perspective, y: cy + y2 * scale * perspective, z };
 }
 
-export default function GideonSphere() {
+export default function ReSightSphere() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { status } = useGideon();
+  const { status } = useReSight();
   const stateRef = useRef({ rx: 0, ry: 0, status: "idle", targetColor: "#00e5ff", currentColor: "#00e5ff" });
   stateRef.current.status = status;
   stateRef.current.targetColor = STATUS_COLORS[status] || STATUS_COLORS.idle;
@@ -89,7 +89,6 @@ export default function GideonSphere() {
     const { vertices, edges } = generateIcosahedron();
     let animId: number;
 
-    // Particles orbiting the sphere
     const particles = Array.from({ length: 6 }, (_, i) => ({
       angle: (i / 6) * Math.PI * 2,
       speed: 0.008 + Math.random() * 0.006,
@@ -117,7 +116,6 @@ export default function GideonSphere() {
 
       ctx.clearRect(0, 0, w, h);
 
-      // Ambient glow behind sphere
       const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, scale * 1.5);
       glowGrad.addColorStop(0, color + "18");
       glowGrad.addColorStop(0.5, color + "08");
@@ -125,7 +123,6 @@ export default function GideonSphere() {
       ctx.fillStyle = glowGrad;
       ctx.fillRect(0, 0, w, h);
 
-      // Draw edges
       ctx.shadowColor = color;
       ctx.shadowBlur = s === "thinking" ? 20 : 10;
       ctx.strokeStyle = color;
@@ -144,7 +141,6 @@ export default function GideonSphere() {
       }
       ctx.stroke();
 
-      // Vertices with depth-based opacity
       ctx.shadowBlur = 6;
       for (const p of projected) {
         const depthAlpha = 0.4 + (p.z + 1) * 0.3;
@@ -155,7 +151,6 @@ export default function GideonSphere() {
         ctx.fill();
       }
 
-      // Orbiting particles
       ctx.shadowBlur = 4;
       ctx.globalAlpha = 0.6;
       const now = Date.now() * 0.001;

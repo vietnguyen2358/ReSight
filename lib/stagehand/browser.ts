@@ -104,14 +104,12 @@ export async function takeScreenshot(): Promise<string> {
 /** Use Stagehand AI to perform an action on the page (click, type, etc.). */
 export async function performAction(instruction: string) {
   const stagehand = await getStagehand();
-  devLog.info("stagehand", `performAction: "${instruction}"`);
   return withAbortCheck(stagehand.act(instruction), "performAction");
 }
 
 /** Use Stagehand AI to extract structured data from the page. */
 export async function extractData(instruction: string) {
   const stagehand = await getStagehand();
-  devLog.info("stagehand", `extractData: "${instruction}"`);
   return withAbortCheck(stagehand.extract(instruction), "extractData");
 }
 

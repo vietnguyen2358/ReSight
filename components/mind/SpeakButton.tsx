@@ -1,10 +1,10 @@
 "use client";
 
-import { useGideon } from "@/components/providers/GideonProvider";
+import { useReSight } from "@/components/providers/ReSightProvider";
 import { MovingBorder } from "@/components/ui/moving-border";
 
 export default function SpeakButton() {
-  const { status } = useGideon();
+  const { status } = useReSight();
 
   const isListening = status === "listening";
   const isThinking = status === "thinking";

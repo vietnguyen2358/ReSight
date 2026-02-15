@@ -2,10 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGideon } from "@/components/providers/GideonProvider";
+import { useReSight } from "@/components/providers/ReSightProvider";
 
 export default function ThoughtStream() {
-  const { thoughts } = useGideon();
+  const { thoughts } = useReSight();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

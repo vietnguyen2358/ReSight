@@ -1,10 +1,10 @@
 "use client";
 
-import { useGideon } from "@/components/providers/GideonProvider";
+import { useReSight } from "@/components/providers/ReSightProvider";
 import OverlayBox from "./OverlayBox";
 
 export default function LiveFeed() {
-  const { latestScreenshot, boundingBoxes } = useGideon();
+  const { latestScreenshot, boundingBoxes } = useReSight();
   const screenshotSrc = latestScreenshot?.startsWith("data:image")
     ? latestScreenshot
     : latestScreenshot

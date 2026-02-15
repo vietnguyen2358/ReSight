@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { GideonProvider } from "@/components/providers/GideonProvider";
+import { ReSightProvider } from "@/components/providers/ReSightProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body>
-        <GideonProvider>{children}</GideonProvider>
+        <ReSightProvider>{children}</ReSightProvider>
       </body>
     </html>
   );

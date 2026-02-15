@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useCallback, useRef, useState } from "react";
-import { useGideon } from "@/components/providers/GideonProvider";
-import type { ThoughtEntry } from "@/components/providers/GideonProvider";
+import { useReSight } from "@/components/providers/ReSightProvider";
+import type { ThoughtEntry } from "@/components/providers/ReSightProvider";
 
 type VoiceState = "idle" | "recording" | "transcribing" | "orchestrating" | "speaking";
 
@@ -14,9 +14,19 @@ function shouldIgnoreUtterance(utterance: string): boolean {
   return false;
 }
 
+/** Activity code → user-friendly TTS message. No pattern matching on content. */
+const ACTIVITY_MESSAGES: Record<string, string> = {
+  navigating: "Still loading the page, one moment...",
+  loading: "Still loading, give it a sec...",
+  acting: "Interacting with the page right now...",
+  extracting: "Still reading through the page...",
+  searching: "Still searching, almost there...",
+  verifying: "Dealing with a verification step...",
+  summarizing: "Putting together what I found...",
+};
+
 /** Build a context-aware progress message from recent agent thoughts. */
 function buildContextUpdate(thoughts: ThoughtEntry[]): string {
-  // Find the most recent non-Voice thought with substance
   const recent = thoughts.slice(-10);
   const relevant = [...recent]
     .reverse()
@@ -24,37 +34,19 @@ function buildContextUpdate(thoughts: ThoughtEntry[]): string {
 
   if (!relevant) return "Still working on that, hang tight.";
 
-  const msg = relevant.message.toLowerCase();
+  if (relevant.activity && ACTIVITY_MESSAGES[relevant.activity]) {
+    return ACTIVITY_MESSAGES[relevant.activity];
+  }
 
-  // Match against common agent activity patterns
-  if (msg.includes("navigat") || msg.includes("going to") || msg.includes("loading"))
-    return "Still loading the page, one moment...";
-  if (msg.includes("screenshot") || msg.includes("image") || msg.includes("looking at"))
-    return "Still looking at what's on screen...";
-  if (msg.includes("extract") || msg.includes("reading") || msg.includes("scanning"))
-    return "Still reading through the page...";
-  if (msg.includes("search") || msg.includes("finding") || msg.includes("looking for"))
-    return "Still searching, almost there...";
-  if (msg.includes("click") || msg.includes("interact") || msg.includes("pressing"))
-    return "Interacting with the page right now...";
-  if (msg.includes("login") || msg.includes("sign in") || msg.includes("password"))
-    return "Working through the login process...";
-  if (msg.includes("captcha") || msg.includes("verify") || msg.includes("bot"))
-    return "Dealing with a verification step...";
-  if (msg.includes("price") || msg.includes("cost") || msg.includes("buy") || msg.includes("cart"))
-    return "Looking at pricing and product details...";
-  if (msg.includes("coffee") || msg.includes("restaurant") || msg.includes("food") || msg.includes("store"))
-    return `Still checking out ${msg.includes("coffee") ? "coffee" : "store"} options...`;
-
-  // Fallback: paraphrase the latest thought directly
-  const short = relevant.message.length > 50
-    ? relevant.message.slice(0, 50) + "..."
-    : relevant.message;
+  const short =
+    relevant.message.length > 50
+      ? relevant.message.slice(0, 50) + "..."
+      : relevant.message;
   return `Still working — ${short}`;
 }
 
 export default function VoiceManager() {
-  const { setStatus, addThought, thoughts } = useGideon();
+  const { setStatus, addThought, thoughts } = useReSight();
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const voiceStateRef = useRef<VoiceState>("idle");
 
@@ -66,10 +58,11 @@ export default function VoiceManager() {
   const lastHandledUtterance = useRef("");
   const actionInFlight = useRef(false);
   const operationAbortRef = useRef<AbortController | null>(null);
+  const thoughtsRef = useRef(thoughts);
 
-  // Progress speech tracking
-  const lastSpokenThoughtId = useRef("");
-  const lastSpokenAt = useRef(0);
+  useEffect(() => {
+    thoughtsRef.current = thoughts;
+  }, [thoughts]);
 
   // Keep ref in sync with state for use in callbacks
   const updateState = useCallback((next: VoiceState) => {
@@ -82,18 +75,20 @@ export default function VoiceManager() {
     [addThought]
   );
 
+  const stopAllAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
+
   // ── Play audio from /api/tts (ElevenLabs/Deepgram), with Web Speech fallback ──
   const playTTS = useCallback(
     async (text: string): Promise<void> => {
-      // Cancel any running Web Speech first
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-      // Stop any currently playing audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+      stopAllAudio();
 
       try {
         const res = await fetch("/api/tts", {
@@ -136,7 +131,7 @@ export default function VoiceManager() {
         }
       }
     },
-    []
+    [stopAllAudio]
   );
 
   // ── Speak the final response (sets status to speaking → idle) ──
@@ -157,10 +152,7 @@ export default function VoiceManager() {
 
   // ── Progress update via TTS (fire-and-forget, no state change) ──
   const speakProgress = useCallback(
-    (text: string) => {
-      lastSpokenAt.current = Date.now();
-      playTTS(text).catch(() => {});
-    },
+    (text: string) => playTTS(text).catch(() => {}),
     [playTTS]
   );
 
@@ -246,16 +238,7 @@ export default function VoiceManager() {
         operationAbortRef.current = null;
       }
 
-      // Stop TTS audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-
-      // Cancel Web Speech
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
+      stopAllAudio();
 
       // Stop recording without triggering processRecording
       if (
@@ -287,7 +270,7 @@ export default function VoiceManager() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [updateState, setStatus, addVoiceThought]);
+  }, [updateState, setStatus, addVoiceThought, stopAllAudio]);
 
   // ── Process recorded audio ──
   const processRecording = useCallback(
@@ -413,19 +396,12 @@ export default function VoiceManager() {
     } else if (state === "recording") {
       stopRecording();
     } else if (state === "speaking") {
-      // Interrupt playback
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
+      stopAllAudio();
       updateState("idle");
       setStatus("idle");
     }
     // Ignore toggle during transcribing/orchestrating
-  }, [startRecording, stopRecording, updateState, setStatus]);
+  }, [startRecording, stopRecording, updateState, setStatus, stopAllAudio]);
 
   // ── Click handler for #speak-button ──
   useEffect(() => {
@@ -451,51 +427,18 @@ export default function VoiceManager() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [toggleMic]);
 
-  // ── Speak Narrator "thinking" thoughts as progress updates via TTS ──
-  // IMPORTANT: Skip "answer" type thoughts — those are long final responses
-  // that will be duplicated by the orchestrator's return value (speakResponse).
-  // Speaking both would burn double ElevenLabs credits for the same content.
-  useEffect(() => {
-    if (voiceState !== "orchestrating") return;
-    if (thoughts.length === 0) return;
-
-    const latest = thoughts[thoughts.length - 1];
-
-    // Don't re-speak the same thought
-    if (latest.id === lastSpokenThoughtId.current) return;
-
-    // Only speak Narrator thoughts (user-facing narration)
-    if (latest.agent !== "Narrator") return;
-
-    // Skip "answer" type — these are the full responses that speakResponse will handle
-    if (latest.type === "answer") return;
-
-    // Throttle: min 8s between spoken updates
-    const now = Date.now();
-    if (now - lastSpokenAt.current < 8000) return;
-
-    lastSpokenThoughtId.current = latest.id;
-    speakProgress(latest.message);
-  }, [voiceState, thoughts, speakProgress]);
-
-  // ── Fallback: context-aware progress updates every 10s if quiet ──
+  // ── Progress updates: every 10s while orchestrating, until request finishes ──
   useEffect(() => {
     if (voiceState !== "orchestrating") return;
 
     const interval = setInterval(() => {
       if (voiceStateRef.current !== "orchestrating") return;
-
-      // Only speak if no update was spoken recently
-      const now = Date.now();
-      if (now - lastSpokenAt.current < 8000) return;
-
-      // Build a context-aware message from the latest agent thought
-      const msg = buildContextUpdate(thoughts);
+      const msg = buildContextUpdate(thoughtsRef.current);
       speakProgress(msg);
-    }, 10000);
+    }, 20000);
 
     return () => clearInterval(interval);
-  }, [voiceState, speakProgress, thoughts]);
+  }, [voiceState, speakProgress]);
 
   // ── Cleanup on unmount ──
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import type { BoundingBox } from "@/components/providers/GideonProvider";
+import type { BoundingBox } from "@/components/providers/ReSightProvider";
 
 interface OverlayBoxProps {
   box: BoundingBox;

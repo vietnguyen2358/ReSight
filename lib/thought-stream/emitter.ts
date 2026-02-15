@@ -1,13 +1,11 @@
 import { EventEmitter } from "events";
+import type {
+  ThoughtEvent,
+  ThoughtType,
+  ThoughtActivity,
+} from "@/lib/agents/types";
 
-export type ThoughtType = "thinking" | "answer";
-
-export interface ThoughtEvent {
-  agent: string;
-  message: string;
-  timestamp: number;
-  type?: ThoughtType;
-}
+export type { ThoughtType, ThoughtEvent } from "@/lib/agents/types";
 
 class ThoughtEmitter extends EventEmitter {
   private history: ThoughtEvent[] = [];
@@ -29,8 +27,19 @@ class ThoughtEmitter extends EventEmitter {
     return [...this.history];
   }
 
-  sendThought(agent: string, message: string, type?: ThoughtType): void {
-    this.emit("thought", { agent, message, timestamp: Date.now(), type });
+  sendThought(
+    agent: string,
+    message: string,
+    type?: ThoughtType,
+    activity?: ThoughtActivity
+  ): void {
+    this.emit("thought", {
+      agent,
+      message,
+      timestamp: Date.now(),
+      type,
+      activity,
+    });
   }
 }
 
