@@ -9,6 +9,7 @@ const NODES = [
   { id: "Orchestrator", short: "O", label: "ORCHESTRATOR", x: 150, y: 26, color: "#00e5ff" },
   { id: "Guardian",     short: "G", label: "GUARDIAN",     x: 240, y: 26, color: "#ff4757" },
   { id: "Scribe",       short: "S", label: "SCRIBE",       x: 150, y: 82, color: "#ffbe0b" },
+  { id: "Vision",       short: "V", label: "VISION",       x: 60,  y: 82, color: "#a78bfa" },
 ] as const;
 
 // ── Edge definitions (hub-spoke from Orchestrator) ──
@@ -16,6 +17,7 @@ const EDGES = [
   { from: "Orchestrator", to: "Navigator", id: "o-n" },
   { from: "Orchestrator", to: "Guardian",  id: "o-g" },
   { from: "Orchestrator", to: "Scribe",    id: "o-s" },
+  { from: "Navigator",    to: "Vision",    id: "n-v" },
 ] as const;
 
 const NODE_MAP = Object.fromEntries(NODES.map((n) => [n.id, n]));
@@ -216,7 +218,7 @@ export default function AgentGraph() {
                   />
                   {/* Data flow dots — fade out mid-journey on O→S edge to avoid obscuring label */}
                   {(() => {
-                    const isVertical = edge.id === "o-s";
+                    const isVertical = edge.id === "o-s" || edge.id === "n-v";
                     return (
                       <>
                         <circle r={2} fill={toNode.color} opacity={0.9}>

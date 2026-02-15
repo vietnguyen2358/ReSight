@@ -65,6 +65,7 @@ export default function VoiceManager() {
   const lastToggleAt = useRef(0);
   const lastHandledUtterance = useRef("");
   const actionInFlight = useRef(false);
+  const operationAbortRef = useRef<AbortController | null>(null);
 
   // Progress speech tracking
   const lastSpokenThoughtId = useRef("");
@@ -202,11 +203,15 @@ export default function VoiceManager() {
       // Immediate spoken acknowledgment so user knows we heard them
       speakAck();
 
+      const controller = new AbortController();
+      operationAbortRef.current = controller;
+
       try {
         const res = await fetch("/api/orchestrator", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ instruction }),
+          signal: controller.signal,
         });
         const result = await res.json();
         const message = result?.message || "Action completed.";
@@ -226,6 +231,64 @@ export default function VoiceManager() {
     [addVoiceThought, setStatus, updateState, speakResponse, speakAck]
   );
 
+  // ── ESC key interrupt for voice mode ──
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      const state = voiceStateRef.current;
+      if (state === "idle") return;
+
+      e.preventDefault();
+
+      // Abort in-flight fetch
+      if (operationAbortRef.current) {
+        operationAbortRef.current.abort();
+        operationAbortRef.current = null;
+      }
+
+      // Stop TTS audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      // Cancel Web Speech
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      // Stop recording without triggering processRecording
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state === "recording"
+      ) {
+        mediaRecorderRef.current.ondataavailable = null;
+        mediaRecorderRef.current.onstop = null;
+        mediaRecorderRef.current.stop();
+        mediaRecorderRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+
+      // Fire server-side stop
+      fetch("/api/orchestrator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instruction: "stop" }),
+      }).catch(() => {});
+
+      // Reset state
+      actionInFlight.current = false;
+      updateState("idle");
+      setStatus("idle");
+      addVoiceThought("Interrupted");
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [updateState, setStatus, addVoiceThought]);
+
   // ── Process recorded audio ──
   const processRecording = useCallback(
     async (blob: Blob) => {
@@ -240,6 +303,9 @@ export default function VoiceManager() {
       setStatus("thinking");
       addVoiceThought("Transcribing...");
 
+      const controller = new AbortController();
+      operationAbortRef.current = controller;
+
       try {
         const formData = new FormData();
         formData.append("audio", blob, "recording.webm");
@@ -247,6 +313,7 @@ export default function VoiceManager() {
         const res = await fetch("/api/transcribe", {
           method: "POST",
           body: formData,
+          signal: controller.signal,
         });
 
         if (res.status === 504) {

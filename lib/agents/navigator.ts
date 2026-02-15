@@ -2,8 +2,16 @@ import { generateText, tool, stepCountIs } from "ai";
 import { google } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
-import { getStagehand } from "@/lib/stagehand/session";
-import { captureScreenshot } from "@/lib/stagehand/screenshot";
+import {
+  navigateTo,
+  getCurrentUrl,
+  getPageTitle,
+  waitFor,
+  evaluateInPage,
+  takeScreenshot,
+  performAction,
+  extractData,
+} from "@/lib/stagehand/browser";
 import { devLog } from "@/lib/dev-logger";
 import { isAborted, setLastUrl, registerNavigatorController, clearNavigatorController } from "./cancellation";
 import { askQuestion } from "./clarification";
@@ -90,10 +98,17 @@ No markdown, no bullet lists. Do NOT describe UI chrome unless directly relevant
 Answer QUICKLY. Highlights only — never data dumps.
 
 - Prices/menus: price range + 2-3 popular items max
-- Products: top 2-3 with prices and ratings
+- Products: top 2-3 with prices and ratings from the SEARCH RESULTS page, then offer to dig deeper
 - Places: rating, address, one standout detail
 - Got enough? Call done IMMEDIATELY. Google snippet = enough.
 - Offer to go deeper, don't just go deeper.
+
+## WHEN TO CLICK INTO PAGES vs. STAY ON SEARCH RESULTS
+- **Search results pages** (Google, Amazon, etc.) only have titles, prices, star ratings, and short snippets. That's enough for a quick overview.
+- **DO NOT try to extract detailed info (reviews, pros/cons, features, descriptions) from a search results page.** That info isn't there — you'd just be hallucinating or getting garbage.
+- If the user wants details, comparisons, reviews, or descriptions: **click into the individual product/page** using goto_url, THEN extract the detailed info from that page.
+- If the user asks to "compare" products: click into each one, extract key details, then summarize.
+- Screenshots and extract_info are great AFTER you're on the right page — not as a substitute for navigating there.
 
 **Done summary: 2-3 sentences, UNDER 50 WORDS. Pack it tight.**
 - BAD (too wordy): "I found 15 protein powder options. The top one is Optimum Nutrition Gold Standard which is priced at $32 with 4.7 stars and 8,000 reviews. Below that is Dymatize ISO100 at $28."
@@ -135,8 +150,10 @@ Only when genuinely ambiguous:
 - Multiple items match: "I see three different protein powders — did you want the Optimum Nutrition one, the Dymatize, or the Garden of Life?"
 - Choice needed: "What size do you want?"
 - Don't ask about routine steps — just do them.
+- NEVER respond with just text asking for clarification. If the request is vague ("find me a video"), just GO there and pick something popular/trending. Use ask_user ONLY if you're already on a page and need a specific choice.
 
 ## RULES
+- ALWAYS start by calling goto_url. NEVER respond with just text — you are a browser, not a chatbot.
 - Complete the task efficiently. One action at a time.
 - Start with goto_url, then narrate, then continue.
 - If something fails, try a different approach — tell the user casually: "That didn't work, let me try another way..."
@@ -164,13 +181,15 @@ YouTube — Search:
 Amazon — Shopping & Ordering:
 1. goto_url("https://www.amazon.com/s?k={search terms}") — use URL search params directly, don't type in the search box
 2. extract_info to get product names, prices, ratings, AND product URLs (the href links)
-3. narrate the top 2-3 results with prices and ratings
-4. To select a product: use extract_info to get the product's URL, then goto_url to that URL. Do NOT use do_action to click product titles — clicking often fails on Amazon.
-5. To add to cart: use do_action to click "Add to Cart". If it fails, try extract_info to find the add-to-cart URL and goto_url to it.
-6. To checkout: goto_url("https://www.amazon.com/gp/cart/view.html") then click "Proceed to checkout"
-7. If login is required for checkout, follow the login flow (ask_user for credentials)
-8. NEVER refuse to complete a purchase the user asked for. If the user said "order it", follow through.
-9. GENERAL TIP: If do_action fails repeatedly on a page, switch to extract_info to get URLs and navigate via goto_url instead.
+3. narrate the top 2-3 results with prices and ratings — this is a QUICK OVERVIEW only
+4. To get details/reviews/features for a product: extract_info to get its URL, then goto_url to that product page. Do NOT try to extract reviews from the search results page — they aren't there.
+5. To compare products: visit each product page individually, extract details from each, then summarize the comparison.
+6. To add to cart: use do_action to click "Add to Cart". If it fails, try extract_info to find the add-to-cart URL and goto_url to it.
+7. To checkout: goto_url("https://www.amazon.com/gp/cart/view.html") then click "Proceed to checkout"
+8. If login is required for checkout, follow the login flow (ask_user for credentials)
+9. NEVER refuse to complete a purchase the user asked for. If the user said "order it", follow through.
+10. GENERAL TIP: If do_action fails repeatedly on a page, switch to extract_info to get URLs and navigate via goto_url instead.
+11. Do NOT use do_action to click product titles — clicking often fails on Amazon. Use extract_info to get URLs and goto_url instead.
 
 Target / Walmart — Shopping:
 1. goto_url to the site with search params
@@ -182,13 +201,13 @@ Google — Search:
 2. narrate the top results
 3. If the Google snippet already answers the question, call done — don't click through`;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getPageContext(page: any) {
-  const url = page.url();
-  const title = await page.title().catch(() => "");
+async function getPageContext() {
+  const url = await getCurrentUrl();
+  const title = await getPageTitle();
 
-  const structured = await page
-    .evaluate(() => {
+  let structured;
+  try {
+    structured = await evaluateInPage(() => {
       const text = (document.body.innerText || "").substring(0, 1500);
 
       // Extract headings
@@ -308,8 +327,9 @@ async function getPageContext(page: any) {
         },
         signals: { hasSearchBox, hasLoginForm, hasCart, hasCookieBanner },
       };
-    })
-    .catch(() => ({
+    });
+  } catch {
+    structured = {
       pageContent: "",
       headings: [] as string[],
       buttons: [] as string[],
@@ -330,7 +350,8 @@ async function getPageContext(page: any) {
         snippets: 0,
       },
       signals: { hasSearchBox: false, hasLoginForm: false, hasCart: false, hasCookieBanner: false },
-    }));
+    };
+  }
 
   const ctx: Record<string, unknown> = {
     currentUrl: url,
@@ -487,14 +508,10 @@ export async function navigatorAgent(
   const runState = { lastToolName: "", lastToolArg: "" };
 
   try {
-    const stagehand = await getStagehand();
-    const page = stagehand.context.activePage();
-    if (!page) throw new Error("No active page available");
-
-    const startUrl = page.url();
+    const startUrl = await getCurrentUrl();
     setLastUrl(startUrl);
     devLog.info("navigator", `Active page: ${startUrl}`);
-    const startCtx = await getPageContext(page);
+    const startCtx = await getPageContext();
 
     const factHints: string[] = [];
     const startPrices = Array.isArray(startCtx.prices) ? (startCtx.prices as string[]) : [];
@@ -613,7 +630,7 @@ export async function navigatorAgent(
             } catch { /* ignore URL parse errors */ }
 
             const loopMsg = checkLoop("goto_url", fullUrl);
-            if (loopMsg) return { error: loopMsg, currentUrl: page.url(), pageTitle: await page.title().catch(() => "") };
+            if (loopMsg) return { error: loopMsg, currentUrl: await getCurrentUrl(), pageTitle: await getPageTitle() };
 
             devLog.info("navigation", `[Step ${stepNumber}] goto_url: ${fullUrl}`);
             // Build a descriptive navigation message
@@ -626,11 +643,11 @@ export async function navigatorAgent(
             statusThought(navMessage);
 
             // Track URL for go-back support
-            setLastUrl(page.url());
+            setLastUrl(await getCurrentUrl());
 
-            const navTimer = devLog.time("navigation", `page.goto(${fullUrl})`);
+            const navTimer = devLog.time("navigation", `navigateTo(${fullUrl})`);
             try {
-              await page.goto(fullUrl, { waitUntil: "domcontentloaded", timeoutMs: 15000 });
+              await navigateTo(fullUrl);
               navTimer({ success: true, url: fullUrl });
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
@@ -639,21 +656,21 @@ export async function navigatorAgent(
             }
 
             // Wait for page to settle (reduced from 6s — captcha retry has its own wait)
-            await page.waitForTimeout(2000);
-            let latestScreenshot = await captureScreenshot(page);
+            await waitFor(2000);
+            let latestScreenshot = await takeScreenshot();
 
-            const pageTitle = await page.title().catch(() => fullUrl);
+            const pageTitle = await getPageTitle() || fullUrl;
 
-            let ctx = await getPageContext(page);
+            let ctx = await getPageContext();
             consecutiveFailures = 0;
 
             // Detect bot blocks — but give captcha solver a second chance
             let blockType = detectBotBlock(String(ctx.pageContent || ""), String(ctx.pageTitle || ""));
             if (blockType) {
               devLog.info("navigator", `Bot block detected (${blockType}), waiting longer for captcha solver...`);
-              await page.waitForTimeout(6000); // extra wait for captcha solver
-              latestScreenshot = await captureScreenshot(page);
-              ctx = await getPageContext(page);
+              await waitFor(6000); // extra wait for captcha solver
+              latestScreenshot = await takeScreenshot();
+              ctx = await getPageContext();
               blockType = detectBotBlock(String(ctx.pageContent || ""), String(ctx.pageTitle || ""));
             }
 
@@ -696,6 +713,7 @@ export async function navigatorAgent(
             let visualDescription = "";
             try {
               if (latestScreenshot) {
+                sendThought("Navigator → Vision", "Analyzing what's on screen...");
                 visualDescription = await describeScreenshot(latestScreenshot, instruction);
               }
             } catch { /* vision is best-effort */ }
@@ -725,7 +743,7 @@ export async function navigatorAgent(
             stepNumber++;
 
             const loopMsg = checkLoop("do_action", action);
-            if (loopMsg) return { error: loopMsg, currentUrl: page.url(), pageTitle: await page.title().catch(() => "") };
+            if (loopMsg) return { error: loopMsg, currentUrl: await getCurrentUrl(), pageTitle: await getPageTitle() };
 
             devLog.info("navigator", `[Step ${stepNumber}] do_action: "${action}"`);
             // Make action descriptions conversational
@@ -743,7 +761,7 @@ export async function navigatorAgent(
 
             const actTimer = devLog.time("stagehand", `act("${action}")  [via navigator tool]`);
             try {
-              await stagehand.act(action);
+              await performAction(action);
               actTimer({ success: true });
               consecutiveFailures = 0;
             } catch (err) {
@@ -752,17 +770,20 @@ export async function navigatorAgent(
               devLog.error("navigator", `[Step ${stepNumber}] Action FAILED: "${action}"`, { error: msg });
               consecutiveFailures++;
               statusThought(`Action failed, trying a different approach...`);
-              await captureScreenshot(page);
-              const errCtx = await getPageContext(page);
+              await takeScreenshot();
+              const errCtx = await getPageContext();
               return { ...errCtx, error: msg };
             }
 
-            await page.waitForTimeout(1000);
-            const actionScreenshot = await captureScreenshot(page);
+            await waitFor(1000);
+            const actionScreenshot = await takeScreenshot();
 
             // Parallelize page context extraction and vision description
+            if (actionScreenshot) {
+              sendThought("Navigator → Vision", "Analyzing what's on screen...");
+            }
             const [ctx, visualDescription] = await Promise.all([
-              getPageContext(page),
+              getPageContext(),
               (async () => {
                 try {
                   if (actionScreenshot) {
@@ -820,21 +841,21 @@ export async function navigatorAgent(
 
             try {
               const extractTimer = devLog.time("stagehand", `extract("${extractInstruction}")`);
-              const result = await stagehand.extract(extractInstruction);
+              const result = await extractData(extractInstruction);
               extractTimer({
                 success: true,
                 resultPreview: JSON.stringify(result).substring(0, 500),
               });
-              await captureScreenshot(page);
+              await takeScreenshot();
               return result;
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               devLog.warn("navigator", `extract failed, falling back to innerText`, { error: msg });
               statusThought("Having trouble reading page, trying fallback...");
-              const fallbackText = await page
-                .evaluate(() => document.body.innerText.substring(0, 3000))
-                .catch(() => "Could not read page text");
-              await captureScreenshot(page);
+              const fallbackText = await evaluateInPage(
+                () => document.body.innerText.substring(0, 3000)
+              ).catch(() => "Could not read page text");
+              await takeScreenshot();
               return { pageText: fallbackText };
             }
           },
@@ -912,7 +933,7 @@ export async function navigatorAgent(
             devLog.info("navigator", `[Step ${stepNumber}] done: "${summary.substring(0, 200)}"`);
             sendThought("Narrator", summary, "answer");
             finalMessage = summary;
-            await captureScreenshot(page);
+            await takeScreenshot();
             return { done: true };
           },
         }),
@@ -927,7 +948,7 @@ export async function navigatorAgent(
     navDone({
       totalSteps: stepNumber,
       llmSteps: Array.isArray(steps) ? steps.length : 0,
-      finalUrl: page.url(),
+      finalUrl: await getCurrentUrl(),
     });
 
     // Build the best possible summary
@@ -939,7 +960,7 @@ export async function navigatorAgent(
       );
       message = narrations.length > 0
         ? narrations[narrations.length - 1]
-        : `I finished browsing. Currently on: ${await page.title().catch(() => page.url())}`;
+        : `I finished browsing. Currently on: ${await getPageTitle() || await getCurrentUrl()}`;
     }
     // Never return the generic "blank page" / "starting fresh" message when we did nothing
     const isBlankPageGeneric = stepNumber === 0 && /starting fresh|blank page|ready to help.*what would you like/i.test(message);
@@ -967,9 +988,7 @@ export async function navigatorAgent(
       devLog.info("navigator", `Force-stopped after ${stepNumber} steps: ${forceStopReason}`);
       // Capture final state for the user
       try {
-        const stagehand = await getStagehand();
-        const p = stagehand.context.activePage();
-        if (p) await captureScreenshot(p);
+        await takeScreenshot();
       } catch { /* ignore */ }
 
       // User-initiated cancel: just stop cleanly, no summary
@@ -993,19 +1012,15 @@ export async function navigatorAgent(
 
     // Try a simple direct navigation as last resort
     try {
-      const stagehand = await getStagehand();
-      const page = stagehand.context.activePage();
-      if (page) {
-        const url = buildSearchUrl(instruction);
-        devLog.warn("navigator", `Fallback: direct navigation to ${url}`);
-        statusThought(`Trying a direct search as fallback...`);
-        await page.goto(url, { waitUntil: "domcontentloaded", timeoutMs: 15000 });
-        await captureScreenshot(page);
-        return {
-          success: true,
-          message: `I opened a search for that. Currently on: ${page.url()}`,
-        };
-      }
+      const url = buildSearchUrl(instruction);
+      devLog.warn("navigator", `Fallback: direct navigation to ${url}`);
+      statusThought(`Trying a direct search as fallback...`);
+      await navigateTo(url);
+      await takeScreenshot();
+      return {
+        success: true,
+        message: `I opened a search for that. Currently on: ${await getCurrentUrl()}`,
+      };
     } catch {
       // ignore fallback errors
     }

@@ -69,7 +69,19 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && loading) {
         e.preventDefault();
-        // Fire stop command to orchestrator
+        // Abort client-side fetch immediately
+        if (abortRef.current) {
+          abortRef.current.abort();
+          abortRef.current = null;
+        }
+        // Cancel Web Speech
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+        // Clear loading state
+        setLoading(false);
+        setStatus("idle");
+        // Fire stop command to orchestrator (server-side cleanup)
         fetch("/api/orchestrator", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -88,7 +100,7 @@ export default function ChatPanel({ inputMode = "chat", onInputModeChange, speak
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [loading]);
+  }, [loading, setStatus]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -9,8 +9,7 @@ import { thoughtEmitter } from "@/lib/thought-stream/emitter";
 import { devLog } from "@/lib/dev-logger";
 import { clearAbort, abortActiveTask, registerOrchestratorController, clearOrchestratorController } from "./cancellation";
 import { hasPendingQuestion, answerQuestion } from "./clarification";
-import { getStagehand } from "@/lib/stagehand/session";
-import { captureScreenshot } from "@/lib/stagehand/screenshot";
+import { goBack, waitFor, takeScreenshot, getPageTitle } from "@/lib/stagehand/browser";
 import type { AgentResult } from "./types";
 
 function getModel() {
@@ -35,8 +34,15 @@ function getModel() {
 
 const ORCHESTRATOR_SYSTEM = `You are ReSight, a chill, friendly voice assistant helping a blind user browse the web. You're their buddy sitting next to them at the computer. Talk like a real person — short, warm, enthusiastic. Your responses are SPOKEN ALOUD so write exactly how you'd talk.
 
+## CRITICAL RULE: ALWAYS CALL navigate
+You MUST call the navigate tool for ANY user request that involves the web. NEVER respond with just text asking for clarification — the navigator has its own ask_user tool for that.
+- Vague request like "find me a video"? Call navigate IMMEDIATELY. The navigator will figure it out or ask the user.
+- "Show me something on YouTube"? Call navigate with the full request. Do NOT ask "what kind of video?"
+- The ONLY time you respond without calling navigate is for pure conversation (greetings, thanks, "how are you").
+- When in doubt, call navigate. Let the navigator handle ambiguity — that's its job.
+
 ## What you can do
-1. **navigate** — Any web task. Pass the user's FULL request, including context from the conversation. The navigator does all the browsing.
+1. **navigate** — Any web task. Pass the user's FULL request, including context from the conversation. The navigator does all the browsing. ALWAYS call this for anything web-related.
 2. **remember** — Store/recall user preferences.
 3. **safety_check** — Use when something seems off: suspicious/shortened URLs (bit.ly etc.), unknown sites, sketchy links someone sent the user, unusually cheap deals, download prompts, or pages asking for too much personal info. Do NOT use for normal purchases on known retailers.
 
@@ -49,6 +55,7 @@ const ORCHESTRATOR_SYSTEM = `You are ReSight, a chill, friendly voice assistant 
 - NEVER use: "I am now...", "Proceeding to...", "I have found...", "Here is what I found:", "Based on my search..."
 - End with something quick: "Want me to grab that?" / "Which one sounds good?"
 - No markdown, no formatting, no bullet lists.
+- NEVER ask the user to clarify before calling navigate. Just call navigate with whatever they said.
 
 ## Purchases & orders
 - When the user asks to buy/order something, JUST DO IT. Call navigate immediately.
@@ -115,16 +122,12 @@ export async function runOrchestrator(
     devLog.info("orchestrator", `Go back command detected`);
     sendThought("Narrator", "Going back!", "thinking");
     try {
-      const stagehand = await getStagehand();
-      const page = stagehand.context.activePage();
-      if (page) {
-        await page.goBack({ waitUntil: "domcontentloaded", timeoutMs: 10000 }).catch(() => {});
-        await page.waitForTimeout(1500);
-        await captureScreenshot(page);
-        const title = await page.title().catch(() => page.url());
-        sendThought("Narrator", `Alright, we're back on "${title}".`, "thinking");
-        return { success: true, message: `Cool, went back to ${title}. What do you wanna do?` };
-      }
+      await goBack();
+      await waitFor(1500);
+      await takeScreenshot();
+      const title = await getPageTitle() || "the previous page";
+      sendThought("Narrator", `Alright, we're back on "${title}".`, "thinking");
+      return { success: true, message: `Cool, went back to ${title}. What do you wanna do?` };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, message: `Couldn't go back: ${msg}` };
@@ -248,8 +251,8 @@ export async function runOrchestrator(
       (s: any) => s.toolCalls && s.toolCalls.length > 0
     );
     if (!hasToolExecution) {
-      // Only send to navigator if the instruction looks like a browsing task
-      const looksLikeBrowsing = /\b(find|search|open|go to|buy|check|get|look up|navigate|browse|compare|directions|restaurant|product|price|event|form|dmv|appointment|website|link|url)\b|https?:\/\//i.test(instruction);
+      // Only skip navigator for pure conversational messages (greetings, thanks, etc.)
+      const looksLikeBrowsing = /\b(find|search|open|go to|buy|check|get|look up|navigate|browse|compare|directions|restaurant|product|price|event|form|dmv|appointment|website|link|url|show|watch|play|video|youtube|read|tell me|what is|what are|how to|where|order|add to cart|recipe|news|weather|map)\b|https?:\/\//i.test(instruction);
       if (!looksLikeBrowsing && text?.trim()) {
         devLog.info("orchestrator", "No tools called, instruction not browsing — returning LLM response");
         return { success: true, message: polishForVoice(text), confirmationRequired: false };
