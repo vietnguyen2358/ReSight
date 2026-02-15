@@ -43,6 +43,7 @@ You MUST call the navigate tool for ANY user request that involves the web. NEVE
 
 ## What you can do
 1. **navigate** — Any web task. Pass the user's FULL request, including context from the conversation. The navigator does all the browsing. ALWAYS call this for anything web-related.
+   - When the user references something from the prior turn ("the post", "that", "it", "the comments", "that one", "this page"), your navigate instruction MUST explicitly state what we're referring to. Include the specific title/URL/name from the prior ReSight response. Example: "We just showed the user the Reddit post 'Am I overreacting: new boyfriend...'. User now asks: what are the comments saying? Navigate to that post and read its comments."
 2. **remember** — Store/recall user preferences.
 3. **safety_check** — Use when something seems off: suspicious/shortened URLs (bit.ly etc.), unknown sites, sketchy links someone sent the user, unusually cheap deals, download prompts, or pages asking for too much personal info. Do NOT use for normal purchases on known retailers.
 
@@ -214,7 +215,14 @@ export async function runOrchestrator(
           }),
           execute: async ({ instruction: navInstruction }) => {
             devLog.info("orchestrator", `Tool call: navigate("${navInstruction}")`);
-            const result = await navigatorAgent(navInstruction, sendThought);
+            const lastReSight = history
+              ?.filter((m) => m.role !== "user")
+              .pop()?.text;
+            const result = await navigatorAgent(
+              navInstruction,
+              sendThought,
+              lastReSight
+            );
             devLog.info("orchestrator", `navigate returned`, {
               success: result.success,
               messagePreview: result.message?.substring(0, 200),
@@ -281,7 +289,8 @@ export async function runOrchestrator(
         return { success: true, message: polishForVoice(text), confirmationRequired: false };
       }
       devLog.warn("orchestrator", "No tools called by LLM, forcing navigator fallback");
-      const fallback = await navigatorAgent(instruction, sendThought);
+      const lastReSight = history?.filter((m) => m.role !== "user").pop()?.text;
+      const fallback = await navigatorAgent(instruction, sendThought, lastReSight);
       return { ...fallback, message: polishForVoice(fallback.message) };
     }
 

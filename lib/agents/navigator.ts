@@ -155,8 +155,15 @@ Only when genuinely ambiguous:
 - Don't ask about routine steps — just do them.
 - NEVER respond with just text asking for clarification. If the request is vague ("find me a video"), just GO there and pick something popular/trending. Use ask_user ONLY if you're already on a page and need a specific choice.
 
+## CHOOSING FROM PRESENTED OPTIONS (CRITICAL)
+When the prior turn shows we narrated options ("Which one interests you?", "Want me to dig into either?") and the user picks one ("the Wuthering Heights one", "let's check out that costume post", "the first one"):
+- The chosen item is ALREADY ON SCREEN — we just showed it to them.
+- Use do_action to CLICK the item directly. Do NOT search for it, do NOT goto_url to a search. Click it on the current page.
+- Only use search/goto_url if we navigated away since we presented the options, or the item clearly isn't visible.
+
 ## RULES
-- ALWAYS start by calling goto_url. NEVER respond with just text — you are a browser, not a chatbot.
+- Start with goto_url when you need to reach a page. When the user is choosing from options we just presented on the current page, start with do_action to click the chosen item — don't search.
+- NEVER respond with just text — you are a browser, not a chatbot.
 - Complete the task efficiently. One action at a time.
 - Start with goto_url, then narrate, then continue.
 - If something fails, try a different approach — tell the user casually: "That didn't work, let me try another way..."
@@ -378,7 +385,8 @@ async function getPageContext() {
 
 export async function navigatorAgent(
   instruction: string,
-  sendThought: SendThoughtFn
+  sendThought: SendThoughtFn,
+  priorContext?: string
 ): Promise<AgentResult> {
   devLog.info("navigator", `========== START: "${instruction}" ==========`);
 
@@ -548,7 +556,10 @@ export async function navigatorAgent(
       devLog.info("navigator", `Playbook match: "${playbookMatch.title}" (${playbookMatch.agents.join(", ")})`);
     }
 
-    const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${factsBlock}${playbookContext}\n\nTask: ${instruction}`;
+    const priorBlock = priorContext?.trim()
+      ? `\nPrior turn (what we just told the user): ${priorContext}\n`
+      : "";
+    const navigatorPrompt = `Current URL: ${startCtx.currentUrl}\nPage title: ${startCtx.pageTitle || "(blank)"}\nPage signals: ${JSON.stringify(startCtx.pageSignals)}${factsBlock}${playbookContext}${priorBlock}\n\nTask: ${instruction}`;
 
 
     devLog.info("llm", "Navigator generateText call", {

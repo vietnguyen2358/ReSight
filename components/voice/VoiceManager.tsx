@@ -46,7 +46,7 @@ function buildContextUpdate(thoughts: ThoughtEntry[]): string {
 }
 
 export default function VoiceManager() {
-  const { setStatus, addThought, thoughts, addChatMessage } = useReSight();
+  const { setStatus, addThought, thoughts, addChatMessage, chatMessages } = useReSight();
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const voiceStateRef = useRef<VoiceState>("idle");
 
@@ -163,6 +163,7 @@ export default function VoiceManager() {
       const acks = [
         "Got it, working on that.",
         "On it!",
+        "Sure thing.",
         "Sure, one sec.",
         "Sounds good.",
         "Alright, checking it out.",
@@ -202,10 +203,13 @@ export default function VoiceManager() {
       operationAbortRef.current = controller;
 
       try {
+        const history = chatMessages
+          .slice(-10)
+          .map((m) => ({ role: m.role, text: m.text }));
         const res = await fetch("/api/orchestrator", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ instruction }),
+          body: JSON.stringify({ instruction, history }),
           signal: controller.signal,
         });
         const result = await res.json();
@@ -227,7 +231,7 @@ export default function VoiceManager() {
         actionInFlight.current = false;
       }
     },
-    [addVoiceThought, setStatus, updateState, speakResponse, speakAck, addChatMessage]
+    [addVoiceThought, setStatus, updateState, speakResponse, speakAck, addChatMessage, chatMessages]
   );
 
   // ── ESC key interrupt for voice mode ──
@@ -434,7 +438,7 @@ export default function VoiceManager() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [toggleMic]);
 
-  // ── Progress updates: every 10s while orchestrating, until request finishes ──
+  // ── Progress updates: every 20s while orchestrating ──
   useEffect(() => {
     if (voiceState !== "orchestrating") return;
 
