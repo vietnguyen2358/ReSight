@@ -115,7 +115,7 @@ export async function getStagehand(): Promise<Stagehand> {
 
     devLog.info("stagehand", `Initializing Stagehand`, {
       env,
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash-preview-04-17",
       provider: "google",
       headless: true,
       browserbase: env === "BROWSERBASE",
@@ -166,7 +166,7 @@ export async function getStagehand(): Promise<Stagehand> {
     const raw = new Stagehand({
       env,
       model: {
-        modelName: "gemini-2.0-flash",
+        modelName: "google/gemini-2.5-flash",
         apiKey: googleApiKey,
       },
       // Run headless — the user sees screenshots in the LiveFeed, not the raw browser

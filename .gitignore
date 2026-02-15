@@ -32,3 +32,6 @@ public/feed/
 
 # internal notes
 qna.md
+
+.resite-cache/
+.resite-cache/latest-screenshot.json
