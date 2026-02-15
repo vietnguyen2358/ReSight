@@ -1,51 +1,6 @@
 {
   "_learned_flows": [
     {
-      "pattern": "Go to Amazon, log in with the email vietnguyen2358@gmail.com, search for \"Optimum Nutrition Gold Sta",
-      "steps": "I need your password to log in and complete the checkout. Could you provide your Amazon password?",
-      "timestamp": 1771112561637
-    },
-    {
-      "pattern": "Search for the best boba shops in Palo Alto and find their prices",
-      "steps": "Great! I found the best boba shops in Palo Alto for you with their prices:\n\n**🏆 Top Pick: Molly Tea** (318 University Ave) - 4.7 stars\n- Recently opened, specialty in premium jasmine-driven teas\n- Mo",
-      "timestamp": 1771105028971
-    },
-    {
-      "pattern": "Find the best boba shops in Palo Alto and their prices",
-      "steps": "I found the best boba shops in Palo Alto with their prices for you!\n\n**Top 5 Shops:**\n1. **Teaspoon** - $8-$11 (Golden Assam $8.50, Thai Tea $8.00, premium lattes up to $11)\n2. **Happy Lemon** - $7-$8",
-      "timestamp": 1771106140861
-    },
-    {
-      "pattern": "Find the nearest Molly Tea location to me and provide directions on how to get there",
-      "steps": "Perfect! I have Molly Tea on Google Maps now. It's at **318 University Ave, Palo Alto, CA 94301**. The shop is currently open and closes at 10 PM. It's a 4.7-star rated bubble tea store with great rev",
-      "timestamp": 1771106570300
-    },
-    {
-      "pattern": "Go to Amazon and search for vanilla protein powder. Find a highly-rated vanilla flavor protein powde",
-      "steps": "Stopped.",
-      "timestamp": 1771113328898
-    },
-    {
-      "pattern": "Go to Amazon and search for vanilla protein powder 1 pound. Find the highest-rated vanilla protein p",
-      "steps": "Perfect! I'm now on the product page for Optimum Nutrition Gold Standard 100% Whey Protein Powder in Vanilla Ice Cream, 1 Pound. The price is $32.99 with free delivery. I can see the \"Add to Cart\" but",
-      "timestamp": 1771113408637
-    },
-    {
-      "pattern": "Go to Amazon, log in with the email vietnguyen2358@gmail.com and complete the checkout for the Optim",
-      "steps": "I understand you want to stop. Let me summarize where we are:\n\nYou're on the Amazon sign-in page with your email vietnguyen2358@gmail.com already entered. To complete the checkout for the **Optimum Nu",
-      "timestamp": 1771113557666
-    },
-    {
-      "pattern": "On Amazon, click the \"Sign in with Google\" button if available, or go to the sign-in page. Use the e",
-      "steps": "Stopped.",
-      "timestamp": 1771114969288
-    },
-    {
-      "pattern": "Go to Amazon and create a new account with the email resite1234@gmail.com and password treehacks2026",
-      "steps": "Good! Now let me click on the password field and enter the password:",
-      "timestamp": 1771115247533
-    },
-    {
       "pattern": "Go to Google.com, click sign in, enter the email resite1234@gmail.com and password treehacks2026!, t",
       "steps": "I see you're on the Amazon registration page. The page is asking you to enable cookies and shows a sign-up form. Let me help you create a new account.\n\nBefore I proceed, I need to confirm: **Do you wa",
       "timestamp": 1771115294546
@@ -99,6 +54,51 @@
       "pattern": "Go to treehacks.com and find the speakers or keynote speakers for TreeHacks 2026. Tell me who's spea",
       "steps": "Perfect! I found the speakers section. Here's what I can tell you:\n\nThe keynote speakers section says **\"Speakers to be announced.\"** They're asking people to check back for updates from TreeHacks Mis",
       "timestamp": 1771120928151
+    },
+    {
+      "pattern": "Go to treehacks.com and tell me about TreeHacks 2026. What is it, when is it happening, where is it,",
+      "steps": "TreeHacks 2026 is Stanford's 12th annual hackathon happening February 13-15, 2026—a 36-hour event for over 1,000 hackers from 30 universities across 12 countries competing for $150K in prizes. They co",
+      "timestamp": 1771125548242
+    },
+    {
+      "pattern": "Go to treehacks.com and find the sponsors section. Tell me who the sponsors are for TreeHacks 2026.",
+      "steps": "Alright, I had to cut it short but here's what I found so far.",
+      "timestamp": 1771125703051
+    },
+    {
+      "pattern": "Navigate to treehacks.com. Scroll down the page to find and read the sponsors section. List all the ",
+      "steps": "Perfect! I found the sponsors section. Here's who's sponsoring TreeHacks 2026:\n\n**Top Tier Sponsors:**\n- Google\n- NVIDIA\n- ASUS\n\n**Additional Sponsors:**\n- OpenAI\n- Y Combinator\n- Zoom\n- Stanford Ecop",
+      "timestamp": 1771125714568
+    },
+    {
+      "pattern": "Go to treehacks.com and find the prize tracks or track information. Tell me what the different prize",
+      "steps": "Alright, so TreeHacks 2026 has a bunch of different prize tracks you can compete in. There's Healthcare, Sustainability, Edge AI, Education, Human Flourishing, Cloud AI, AI, and Inference. So basicall",
+      "timestamp": 1771125744537
+    },
+    {
+      "pattern": "Go to treehacks.com and find the location or venue information for TreeHacks 2026. Tell me exactly w",
+      "steps": "Based on what I've found on the TreeHacks website, I can see that **the event is being held at Stanford University**. The page mentions it multiple times — \"Welcome to TreeHacks, Stanford's premier ha",
+      "timestamp": 1771125869692
+    },
+    {
+      "pattern": "Go to Google Maps and search for highly-rated coffee shops near San Jose State University (SJSU). Fi",
+      "steps": "Perfect! I found some killer coffee shops near SJSU. Let me give you the top three:\n\n**A.M. Craft** is leading the pack with a 4.8-star rating and 198 reviews. It's right at 481 E San Carlos St, basic",
+      "timestamp": 1771125966654
+    },
+    {
+      "pattern": "Go to Google Maps and search for highly-rated coffee shops near San Jose State University SJSU. Find",
+      "steps": "Okay, here's your coffee shop lineup near SJSU! A.M. Craft is your top pick with a 4.8-star rating and 198 reviews at 481 E San Carlos St — super close to campus and people love it. Nirvana Soul Coffe",
+      "timestamp": 1771126087479
+    },
+    {
+      "pattern": "Go to Google Maps and get transit directions from San Jose State University SJSU to the San Francisc",
+      "steps": "Got your public transit route! San Jose State to the Ferry Building takes 1 hour 43 minutes, leaving at 7:55 PM and arriving at 9:38 PM. You'll use the Rapid 500 bus, then Orange-N and Blue-S lines. W",
+      "timestamp": 1771127269301
+    },
+    {
+      "pattern": "Go to Amazon and search for whey protein. Find two different whey protein products, note their price",
+      "steps": "Let me give you the full breakdown:\n\n**Product 1: Optimum Nutrition Gold Standard 100% Whey (Vanilla Ice Cream)**\n- Price: $21.12\n- Size: 1 pound (16 ounces)\n- Rating: 4.6 stars with 260,092 reviews\n-",
+      "timestamp": 1771127511418
     }
   ],
   "browserbase_context_id": "516063f0-6075-4671-8242-74024ab22df7",

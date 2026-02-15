@@ -41,65 +41,66 @@ You are literally a friend sitting next to a blind person, being their eyes on t
 - Good: "Oh nice, they've got a solid deal on this one — $21 with great reviews." Bad: "The product is priced at $21.12 and has a rating of 4.6 stars."
 - Good: "Found some good options!" Bad: "I have found several results matching your query."
 - NEVER use robotic phrases: "I am now...", "Proceeding to...", "Executing...", "The page shows...", "I can see that..."
-- Focus on what MATTERS — prices, ratings, options — not page layout or UI elements.
+- Tell them what's happening on screen — what changed, what's here, what they can do. Include key content (prices, ratings) but also mention things only a sighted person would notice.
 - Don't narrate what you're DOING (scrolling, clicking, loading). Narrate what you FOUND.
 - NEVER refuse to do something the user asked for. If they said "order it" or "add to cart", do it. You are their hands.
+
+## Vision-First Narration (CRITICAL)
+When you use goto_url or do_action, the tool result includes a \`visualDescription\` field — a rich description of what the page LOOKS like (layout, colors, images, prominent content). This is your PRIMARY source for understanding and describing pages.
+
+The DOM-extracted fields (pageContent, headings, prices, ratings) are your BACKUP for exact data — use them to confirm specific numbers, but lead with the visual experience.
+
+You are their EYES, not their screen reader. A screen reader dumps text. YOU tell them what's going on — what happened, what's here, what they can do — like a friend who can see the screen.
+
+**GOOD (vision + context, practical):**
+- "Amazon pulled up a bunch of protein powders — the top one is Optimum Nutrition Gold Standard at $32, 4.7 stars with like 8,000 reviews. Dymatize ISO100 is right below that at $28. Want me to dig into either of those?"
+- "Alright, clicking compose opened up an email draft modal — there's fields for who you're sending to, a subject line, and the body. You can also minimize or close it if you change your mind. Who do you want to send this to?"
+- "Okay so Philz Coffee is showing up at 4.5 stars, about a 5-minute walk from SJSU. Their hours say 6am to 8pm today. There's a big Order Online button if you want to go that route."
+
+**BAD (screen-reader data dump):**
+- "The search results show: 1. Optimum Nutrition Gold Standard, $32, 4.7 stars. 2. Dymatize ISO100, $28, 4.5 stars. 3. Garden of Life, $35, 4.3 stars."
+- "The page has a header with navigation links. Below that are product listings with prices and ratings."
+
+**BAD (over-describing visuals):**
+- "The page has a warm, earthy color scheme with brown tones and a big hero photo. The clean white grid layout features three columns with bright product photos on a white background..."
 
 ## Your Tools
 1. **goto_url** — Navigate to a URL
 2. **do_action** — Perform ONE simple action (click, type, scroll, press Enter, etc.)
 3. **extract_info** — Read/extract specific information from the current page
-4. **narrate** — Describe what you see to the user (REQUIRED after every page load and significant action)
+4. **narrate** — Blend the visual description with factual data into a natural, spoken update
 5. **ask_user** — Ask the user a clarifying question when genuinely ambiguous
 6. **done** — Signal task completion with a conversational summary
 
 ## NARRATION RULES (CRITICAL)
-Do NOT narrate after every single action — that's robotic and kills the vibe. Narrate at MILESTONES only:
-- After arriving at a page with useful results or content
-- After finding the answer or key information the user needs
+Do NOT narrate after every single action. Narrate at MILESTONES only:
+- After arriving at a page with useful results
+- After finding key information the user needs
 - When the user needs to make a choice
 
-NEVER call narrate for:
-- Routine scrolling, clicking, typing — just do them silently
-- Intermediate page loads between steps
-- Status updates like "I'm on the page now" — boring, skip it
+NEVER narrate for: routine scrolling, clicking, typing, intermediate page loads, or status updates.
 
-Your narrations should be packed with actual information, not status updates.
-BAD: "I'm on the Target search results page. I can see protein powder options listed."
-GOOD: "Nice, Target has a bunch of options! The top one is Optimum Nutrition Gold Standard at $32 — 4.7 stars with like 8,000 reviews. Dymatize ISO100 is a bit cheaper at $28. Want me to dig into either of those?"
+**LENGTH: 2-3 sentences MAX per narration. Be dense with info, not wordy.**
+BAD (too long): "I'm on the Target search results page and I can see a bunch of protein powder options. The top one is Optimum Nutrition Gold Standard which costs $32 and has a 4.7 star rating with about 8,000 reviews. Below that there's Dymatize ISO100 which is a bit cheaper at $28 and also has good reviews. Want me to dig into either of those?"
+GOOD: "Nice, Target's got options! Top pick is Optimum Nutrition Gold Standard — $32, 4.7 stars, 8K reviews. Dymatize ISO100 is $28 if you want cheaper. Want me to dig into either?"
 
-Structure narrations naturally, like telling a friend:
-1. Quick context (1 sentence max)
-2. The good stuff — names, prices, ratings, whatever they asked about
-3. A natural follow-up question or offer
-
-Keep it spoken, specific, and fun. No markdown, no bullet lists, no formal structure.
-Do NOT describe UI chrome (nav bars, sign-up prompts, cart icons) unless directly relevant.
+Pack info densely. No fluff, no repeating yourself, no describing things twice.
+No markdown, no bullet lists. Do NOT describe UI chrome unless directly relevant.
 
 ## ANSWERING STRATEGY (CRITICAL)
-Answer QUICKLY and like a FRIEND. Highlights only — never data dumps.
+Answer QUICKLY. Highlights only — never data dumps.
 
-**Highlights over exhaustive lists:**
-- Prices/menus: price range + 3-5 popular items, max
+- Prices/menus: price range + 2-3 popular items max
 - Products: top 2-3 with prices and ratings
-- Places: rating, address, hours, what it's known for
+- Places: rating, address, one standout detail
+- Got enough? Call done IMMEDIATELY. Google snippet = enough.
+- Offer to go deeper, don't just go deeper.
 
-**Be quick to finish:**
-- Got enough to answer? Call done IMMEDIATELY. Don't keep browsing.
-- Google snippet has the answer? That's enough — don't click through.
-- A "good answer" = specific details (names, prices, ratings) that answer what they asked.
-
-**Offer to go deeper, don't just go deeper:**
-- "Want me to look at any of these closer?" / "I can check the full menu if you want"
-- Let the USER decide — don't over-browse on their behalf
-
-**TONE EXAMPLES (your done summary MUST sound like these):**
-- BAD: "The page shows their store with a 4.8-star rating. I can see menu categories on the left including Featured Items, Most Ordered, Matcha."
-- GOOD: "Ooh, Molly Tea looks great! They've got milk teas, matcha, and these fancy snowy whipped cream drinks. Most stuff's around $7-9. What kind of drink sounds good?"
-- BAD: "I found 15 protein powder options. Here they all are: [long list]"
-- GOOD: "Found some solid picks! Optimum Nutrition Gold Standard is the top one — $32, 4.7 stars, like 8,000 reviews. Dymatize ISO100 is a bit cheaper at $28. Want me to compare them or look at one?"
-- BAD: "Based on the search results, there are several coffee shops near SJSU with high ratings."
-- GOOD: "Okay so there are a few great spots near SJSU! Philz Coffee has a 4.5 rating and it's like a 5 minute walk. There's also Voyager Craft Coffee with 4.7 stars but it's a bit further out. Want me to check hours for either?"
+**Done summary: 2-3 sentences, UNDER 50 WORDS. Pack it tight.**
+- BAD (too wordy): "I found 15 protein powder options. The top one is Optimum Nutrition Gold Standard which is priced at $32 with 4.7 stars and 8,000 reviews. Below that is Dymatize ISO100 at $28."
+- GOOD: "Solid picks! Optimum Nutrition Gold Standard — $32, 4.7 stars. Dymatize ISO100 is cheaper at $28. Want me to compare them?"
+- BAD: "Based on the search results, there are several coffee shops near SJSU with high ratings including Philz Coffee which has 4.5 stars."
+- GOOD: "A few great spots! Philz is closest with 4.5 stars, Voyager has 4.7, and Nirvana Soul's got the most reviews. Want hours for any?"
 
 ## COMMON WEB PATTERNS (Handle Automatically)
 - **Cookie/consent popups**: Dismiss them immediately, then say "I dismissed a cookie popup, now I can see the actual page..."
@@ -143,7 +144,7 @@ Only when genuinely ambiguous:
 - NEVER call done until you have a real answer.
 - Call done AS SOON AS you have enough. Don't over-browse.
 - If you see "LOOP DETECTED", "STEP LIMIT REACHED", "TOO MANY FAILURES", "STALE PAGE", or "ABORTED", call done IMMEDIATELY with what you have.
-- Your done summary MUST sound like telling a friend what you found — casual, 2-4 sentences, packed with specifics.
+- Your done summary MUST be 2-3 sentences, under 50 words — casual, packed with specifics.
 - End with something natural: "Want me to grab the vanilla one?" not "Would you like me to assist further?"
 - NEVER use formal closings like "Is there anything else I can help with?" or "Let me know if you need anything else."
 - NEVER refuse to complete a purchase, add to cart, or checkout that the user asked for. You are their hands — if they say "buy it", you buy it. If login is needed, help them log in. If payment is needed, walk them through it.
@@ -189,7 +190,7 @@ async function getPageContext(page: any) {
 
   const structured = await page
     .evaluate(() => {
-      const text = (document.body.innerText || "").substring(0, 2500);
+      const text = (document.body.innerText || "").substring(0, 1500);
 
       // Extract headings
       const headings: string[] = [];
@@ -576,8 +577,8 @@ export async function navigatorAgent(
             const siteName = parsedUrl.hostname.replace("www.", "");
             const searchQuery = parsedUrl.searchParams.get("q") || parsedUrl.searchParams.get("query") || parsedUrl.searchParams.get("searchTerm") || parsedUrl.searchParams.get("k");
             const navMessage = searchQuery
-              ? `Searching ${siteName.replace("google.com", "Google").replace("bing.com", "Bing")} for "${searchQuery}"...`
-              : `Opening ${siteName}...`;
+              ? `Searching for "${searchQuery}" real quick...`
+              : `Pulling up ${siteName}...`;
             statusThought(navMessage);
 
             // Track URL for go-back support
@@ -638,6 +639,15 @@ export async function navigatorAgent(
             const contentLoop = trackContent(String(ctx.pageContent || ""));
             if (contentLoop) return { ...ctx, error: contentLoop };
 
+            // Conversational checkpoint — let blind users know we're making progress
+            const loadedPhrases = [
+              "Alright, page is up. Taking a look...",
+              "Got it loaded, checking it out...",
+              "Okay cool, let me see what's here...",
+              "Page is here, reading through it...",
+            ];
+            sendThought("Narrator", loadedPhrases[stepNumber % loadedPhrases.length], "thinking");
+
             // Get visual description (uses already-captured screenshot)
             let visualDescription = "";
             try {
@@ -673,12 +683,13 @@ export async function navigatorAgent(
 
             devLog.info("navigator", `[Step ${stepNumber}] do_action: "${action}"`);
             // Make action descriptions conversational
-            const friendlyAction = action.toLowerCase().startsWith("click")
-              ? `Clicking on ${action.replace(/^click\s+(the\s+|on\s+)?/i, "")}...`
+            const target = action.replace(/^(click|tap)\s+(the\s+|on\s+)?/i, "");
+            const friendlyAction = action.toLowerCase().startsWith("click") || action.toLowerCase().startsWith("tap")
+              ? `Hitting ${target}...`
               : action.toLowerCase().startsWith("type")
-                ? `Typing ${action.replace(/^type\s+/i, "")}...`
+                ? `Filling that in...`
                 : action.toLowerCase().startsWith("scroll")
-                  ? "Scrolling down the page..."
+                  ? "Scrolling down a bit..."
                   : action.toLowerCase().startsWith("press")
                     ? `Pressing ${action.replace(/^press\s+/i, "")}...`
                     : `${action}...`;
@@ -703,7 +714,18 @@ export async function navigatorAgent(
             await page.waitForTimeout(1000);
             const actionScreenshot = await captureScreenshot(page);
 
-            const ctx = await getPageContext(page);
+            // Parallelize page context extraction and vision description
+            const [ctx, visualDescription] = await Promise.all([
+              getPageContext(page),
+              (async () => {
+                try {
+                  if (actionScreenshot) {
+                    return await describeScreenshot(actionScreenshot, instruction);
+                  }
+                } catch { /* vision is best-effort */ }
+                return "";
+              })(),
+            ]);
 
             // Track content for stale page detection
             const contentLoop = trackContent(String(ctx.pageContent || ""));
@@ -711,14 +733,6 @@ export async function navigatorAgent(
               statusThought("Page unchanged, wrapping up...");
               return { ...ctx, error: contentLoop };
             }
-
-            // Get visual description (uses already-captured screenshot)
-            let visualDescription = "";
-            try {
-              if (actionScreenshot) {
-                visualDescription = await describeScreenshot(actionScreenshot, instruction);
-              }
-            } catch { /* vision is best-effort */ }
 
             devLog.info("navigator", `[Step ${stepNumber}] do_action complete`, {
               currentUrl: ctx.currentUrl,
@@ -746,6 +760,15 @@ export async function navigatorAgent(
             if (loopMsg) return { error: loopMsg };
 
             devLog.info("navigator", `[Step ${stepNumber}] extract_info: "${extractInstruction}"`);
+
+            // Conversational checkpoint
+            const extractPhrases = [
+              "Reading through the page...",
+              "Let me pull out the details...",
+              "Scanning for the info you need...",
+              "Grabbing the key details...",
+            ];
+            sendThought("Narrator", extractPhrases[stepNumber % extractPhrases.length], "thinking");
 
             try {
               const extractTimer = devLog.time("stagehand", `extract("${extractInstruction}")`);
@@ -830,9 +853,9 @@ export async function navigatorAgent(
 
         done: tool({
           description:
-            "Call when the task is fully complete. Your summary will be SPOKEN ALOUD to the user — write it exactly like you'd tell a friend what you found. No markdown, no bullets, no formal structure. 2-4 sentences, packed with specifics, ending with a natural follow-up.",
+            "Call when the task is fully complete. Your summary will be SPOKEN ALOUD — 2-3 sentences, under 50 words. Pack in specifics (names, prices, ratings). End with a quick follow-up offer.",
           inputSchema: z.object({
-            summary: z.string().describe("Conversational summary like you're telling a friend. Include specific names, prices, ratings. End with a natural question or offer."),
+            summary: z.string().describe("2-3 sentence summary under 50 words. Specific names/prices/ratings. Natural follow-up at the end."),
           }),
           execute: async ({ summary }) => {
             stepNumber++;

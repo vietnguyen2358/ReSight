@@ -16,13 +16,9 @@ export async function describeScreenshot(
   const timer = devLog.time("navigation", "describeScreenshot");
 
   try {
-    const contextHint = taskContext
-      ? ` The user is trying to: ${taskContext}.`
-      : "";
-
     const { text } = await generateText({
       model: google("gemini-2.0-flash"),
-      maxOutputTokens: 200,
+      maxOutputTokens: 400,
       messages: [
         {
           role: "user",
@@ -33,7 +29,16 @@ export async function describeScreenshot(
             },
             {
               type: "text",
-              text: `You are describing a webpage screenshot to a blind user. Give a vivid but brief (2-4 sentences) description of the VISUAL experience — colors, layout style, imagery, branding feel, and overall mood/vibe. Do NOT list text content, prices, or navigation items — another system handles that. Focus on what a sighted person would FEEL looking at this page.${contextHint}`,
+              text: `You are describing a webpage screenshot to a blind user. Be their eyes — tell them what's on screen the way a friend sitting next to them would. 3-5 sentences.
+
+Focus on:
+- WHAT HAPPENED: Did something open, change, load? Acknowledge it.
+- WHAT'S HERE: The main content — product names, prices, article titles, search results. Be specific with names and numbers you can read.
+- WHAT'S AVAILABLE: Key actions they can take — buttons, forms, links, modals. Mention options that aren't obvious from text alone (e.g. a modal they could close, tabs they could switch).
+- IMAGES: Briefly note what photos/graphics show if they add context (a product photo, a map, a person).
+${taskContext ? `\nThe user is trying to: ${taskContext}. Focus on what's most relevant to their goal.` : ""}
+
+Do NOT over-describe visual design (colors, fonts, whitespace, branding). Do NOT give a bulleted list. Just talk naturally, like telling a friend what you see.`,
             },
           ],
         },

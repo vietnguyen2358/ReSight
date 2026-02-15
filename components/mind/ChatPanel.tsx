@@ -122,6 +122,38 @@ export default function ChatPanel() {
     ? thoughts.filter((t) => t.timestamp >= requestTimestamp.current)
     : [];
 
+  // ── Web Speech for intermediary Narrator updates ──
+  // Speaks short Narrator thoughts aloud so blind users hear progress (free, no API cost)
+  const lastSpokenIdRef = useRef<string>("");
+  useEffect(() => {
+    if (!loading || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const narratorThoughts = liveThoughts.filter((t) => {
+      const { from } = parseAgent(t.agent);
+      return from === "Narrator" && t.type === "thinking";
+    });
+    if (narratorThoughts.length === 0) return;
+
+    const latest = narratorThoughts[narratorThoughts.length - 1];
+    // Only speak new thoughts, and only short ones (long narrations are for reading, not speech)
+    if (latest.id === lastSpokenIdRef.current) return;
+    if (latest.message.length > 120) return;
+
+    lastSpokenIdRef.current = latest.id;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(latest.message);
+    utterance.rate = 1.1;
+    utterance.volume = 0.7;
+    window.speechSynthesis.speak(utterance);
+  }, [liveThoughts, loading]);
+
+  // Cancel Web Speech when loading ends (ElevenLabs takes over for final response)
+  useEffect(() => {
+    if (!loading && typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, [loading]);
+
   const submitAnswer = useCallback(async (answer: string) => {
     setPendingQuestion(null);
     try {
